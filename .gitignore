@@ -1,0 +1,42 @@
+# Compiled class files
+*.class
+
+# Maven target directory
+target/
+
+# Logs
+*.log
+
+# IntelliJ IDEA files
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# VS Code files
+.vscode/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+
+# Kotlin/Java build
+*.jar
+*.war
+*.ear
+
+# Node.js dependencies
+node_modules/
+
+# Test output
+*.test.js.snap
+
+# Docker
+**/docker-compose.override.yml
+
+# Others
+*.swp
