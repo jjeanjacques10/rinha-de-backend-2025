@@ -1,6 +1,6 @@
 x-service-templates:
   payment-processor: &payment-processor
-    image: jjeanjacques10/payment-processor
+    image: zanfranceschi/payment-processor:amd64-20250707101540
     networks:
       - payment-processor
     deploy:
@@ -39,7 +39,7 @@ services:
       - 8001:8080
     depends_on:
       - payment-processor-db-1
-    
+
   payment-processor-db-1:
     <<: *payment-processor-db
     container_name: payment-processor-default-db

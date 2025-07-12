@@ -1,5 +1,5 @@
 server:
-  port: 8999
+  port: ${APP_PORT:9999}
 
 spring:
   application:
@@ -26,6 +26,15 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
+
+apis:
+  payment-processor:
+    default:
+      url: ${PROCESSOR_DEFAULT_URL:http://localhost:8001}
+      timeout: ${TIMEOUT_PAYMENT_PROCESSOR:500}
+    fallback:
+      url: ${PROCESSOR_FALLBACK_URL:http://localhost:8002}
+      timeout: ${TIMEOUT_PAYMENT_PROCESSOR:500}
 
 logging:
   level:

@@ -1,11 +1,11 @@
-package com.jjeanjacques.rinhabackend.domain.models
+package com.jjeanjacques.rinhabackend.adapter.controller.response
 
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
 
-data class Payment(
+data class PaymentDetailsResponse(
     val correlationId: UUID,
     val amount: BigDecimal,
-    var requestedAt: Instant? = Instant.now()
+    val requested_at: Instant
 )

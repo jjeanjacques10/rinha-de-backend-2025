@@ -1,24 +1,44 @@
 package com.jjeanjacques.rinhabackend.domain.service
 
+import com.jjeanjacques.rinhabackend.adapter.rest.PaymentProcessorDefault
+import com.jjeanjacques.rinhabackend.domain.models.DefaultDetails
+import com.jjeanjacques.rinhabackend.domain.models.FallbackDetails
+import com.jjeanjacques.rinhabackend.domain.models.PaymentSummary
 import com.jjeanjacques.rinhabackend.domain.models.Payment
-import com.jjeanjacques.rinhabackend.domain.port.output.PaymentRepository
+import com.jjeanjacques.rinhabackend.domain.port.output.AdminPaymentRepository
 import org.springframework.stereotype.Service
-import java.util.UUID
+import java.math.BigDecimal
+import java.time.Instant
 
 @Service
 class PaymentService(
-    private val paymentRepository: PaymentRepository
+    private val adminPaymentRepository: AdminPaymentRepository,
+    private val paymentProcessorDefault: PaymentProcessorDefault
 ) {
     fun processPayment(request: Payment) {
-        log.info("Processing payment with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
-
-        paymentRepository.savePayment(request)
+        log.info("Requesting payment with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
+        val response = paymentProcessorDefault.callPaymentProcessor(request)
+        log.info("[${request.correlationId}] Payment processor response: $response")
     }
 
-    fun getPayment(id: UUID): Payment {
-        log.info("Retrieving payment with ID: $id")
+    fun getSummary(from: String, to: String): PaymentSummary? {
+        val payments = adminPaymentRepository.getPaymentsByRange(
+            Instant.parse(if (from.endsWith("Z")) from else "${from}Z"),
+            Instant.parse(if (to.endsWith("Z")) to else "${to}Z")
+        )
 
-        return paymentRepository.getPaymentById(id)
+        log.info("Retrieved ${payments.size} payments from $from to $to")
+
+        return PaymentSummary(
+            default = DefaultDetails(
+                totalRequests = payments.size,
+                totalAmount = payments.sumOf { it.amount }
+            ),
+            fallback = FallbackDetails(
+                totalRequests = 0,
+                totalAmount = BigDecimal.ZERO
+            )
+        )
     }
 
     companion object {

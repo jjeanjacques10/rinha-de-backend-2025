@@ -1,0 +1,41 @@
+x-service-templates:
+  api1: &api-processor
+    image: jjeanjacques10/payment-processor
+    networks:
+      - payment-processor
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: "350MB"
+
+services:
+  api1:
+    <<: *api-processor
+    container_name: api1
+    hostname: api1
+    ports:
+      - 9999:8080
+    environment:
+      - APP_PORT=8080
+      - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
+      - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    hostname: redis
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "100MB"
+
+
+networks:
+  backend:
+    driver: bridge
+  payment-processor:
+    external: true

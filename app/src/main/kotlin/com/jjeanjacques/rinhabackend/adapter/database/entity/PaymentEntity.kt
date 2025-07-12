@@ -19,5 +19,5 @@ class PaymentEntity(
     val amount: BigDecimal,
 
     @Column(name = "requested_at", nullable = false)
-    val requestedAt: Instant
+    var requestedAt: Instant
 )
