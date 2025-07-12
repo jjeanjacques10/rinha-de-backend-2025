@@ -1,42 +1,57 @@
 package com.jjeanjacques.rinhabackend.domain.service
 
-import com.jjeanjacques.rinhabackend.adapter.rest.PaymentProcessorDefault
+import com.jjeanjacques.rinhabackend.adapter.rest.PaymentProcessorService
+import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import com.jjeanjacques.rinhabackend.domain.models.DefaultDetails
 import com.jjeanjacques.rinhabackend.domain.models.FallbackDetails
 import com.jjeanjacques.rinhabackend.domain.models.PaymentSummary
 import com.jjeanjacques.rinhabackend.domain.models.Payment
-import com.jjeanjacques.rinhabackend.domain.port.output.AdminPaymentRepository
+import com.jjeanjacques.rinhabackend.domain.port.output.PaymentRepository
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.Instant
 
 @Service
 class PaymentService(
-    private val adminPaymentRepository: AdminPaymentRepository,
-    private val paymentProcessorDefault: PaymentProcessorDefault
+    private val paymentProcessorDefault: PaymentProcessorService,
+    private val paymentRepository: PaymentRepository
 ) {
-    fun processPayment(request: Payment) {
-        log.info("Requesting payment with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
-        val response = paymentProcessorDefault.callPaymentProcessor(request)
-        log.info("[${request.correlationId}] Payment processor response: $response")
+    fun processPayment(payment: Payment) {
+        log.info("Requesting payment with correlation ID: ${payment.correlationId}, amount: ${payment.amount}, requested at: ${payment.requestedAt}")
+        val response = paymentProcessorDefault.callPaymentProcessor(payment)
+        log.info("[${payment.correlationId}] Payment processor response: $response")
+        paymentRepository.save(payment)
     }
 
     fun getSummary(from: String, to: String): PaymentSummary? {
-        val payments = adminPaymentRepository.getPaymentsByRange(
-            Instant.parse(if (from.endsWith("Z")) from else "${from}Z"),
-            Instant.parse(if (to.endsWith("Z")) to else "${to}Z")
-        )
+        val fromInstant = Instant.parse(if (from.endsWith("Z")) from else "${from}Z")
+        val toInstant = Instant.parse(if (to.endsWith("Z")) to else "${to}Z")
 
-        log.info("Retrieved ${payments.size} payments from $from to $to")
+        val payments = paymentRepository.getAll().filter {
+            it.requestedAt != null &&
+                    it.requestedAt!!.isAfter(fromInstant) &&
+                    it.requestedAt!!.isBefore(toInstant)
+        }
+
+        val paymentsDefault = payments.filter { it.type == TypePayment.DEFAULT }
+        val paymentsFallback = payments.filter { it.type == TypePayment.FALLBACK }
+
+        log.info(
+            "Payments summary from $from to $to: " +
+                "Default requests: ${paymentsDefault.size}, " +
+                "Total amount: ${paymentsDefault.sumOf { it.amount }}, " +
+                "Fallback requests: ${paymentsFallback.size}, " +
+                "Total amount: ${paymentsFallback.sumOf { it.amount }}"
+        )
 
         return PaymentSummary(
             default = DefaultDetails(
-                totalRequests = payments.size,
-                totalAmount = payments.sumOf { it.amount }
+                totalRequests = paymentsDefault.size,
+                totalAmount = paymentsDefault.sumOf { it.amount }
             ),
             fallback = FallbackDetails(
-                totalRequests = 0,
-                totalAmount = BigDecimal.ZERO
+                totalRequests = paymentsFallback.size,
+                totalAmount = paymentsFallback.sumOf { it.amount }
             )
         )
     }

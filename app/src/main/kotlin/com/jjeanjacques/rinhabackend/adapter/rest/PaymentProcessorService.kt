@@ -2,28 +2,31 @@ package com.jjeanjacques.rinhabackend.adapter.rest
 
 import com.jjeanjacques.rinhabackend.adapter.rest.client.PaymentProcessorClient
 import com.jjeanjacques.rinhabackend.adapter.rest.request.PaymentProcessorRequest
-import com.jjeanjacques.rinhabackend.adapter.rest.response.PaymentDefaultResponse
+import com.jjeanjacques.rinhabackend.adapter.rest.response.PaymentProcessorResponse
+import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import com.jjeanjacques.rinhabackend.domain.models.Payment
-import org.springframework.web.reactive.function.client.WebClient
+import com.jjeanjacques.rinhabackend.domain.utils.toString
 import org.springframework.stereotype.Component
-import java.time.Instant
-import java.time.format.DateTimeFormatter
+
 
 @Component
-class PaymentProcessorDefault(
+class PaymentProcessorService(
     private val paymentProcessorClient: PaymentProcessorClient,
     private val paymentProcessorFallbackClient: PaymentProcessorClient
 ) {
-    fun callPaymentProcessor(payment: Payment): PaymentDefaultResponse? {
+    fun callPaymentProcessor(payment: Payment): Payment? {
         return try {
             requestPaymentDefault(payment)
+            payment
         } catch (ex: Exception) {
             log.error("Error calling payment processor: \\${ex.message}", ex)
             requestFallBackPayment(payment)
+            payment.type = TypePayment.FALLBACK
+            payment
         }
     }
 
-    fun requestPaymentDefault(payment: Payment): PaymentDefaultResponse? {
+    fun requestPaymentDefault(payment: Payment): PaymentProcessorResponse? {
         return paymentProcessorClient.requestPaymentProcessorDefault(
             PaymentProcessorRequest(
                 correlationId = payment.correlationId,
@@ -35,7 +38,7 @@ class PaymentProcessorDefault(
         )
     }
 
-    fun requestFallBackPayment(payment: Payment): PaymentDefaultResponse? {
+    fun requestFallBackPayment(payment: Payment): PaymentProcessorResponse? {
         log.warn("🔥 Falling back to fallback payment processor for correlation ID: \\${payment.correlationId} 🔥")
         return paymentProcessorFallbackClient.requestPaymentProcessorDefault(
             PaymentProcessorRequest(
@@ -51,8 +54,4 @@ class PaymentProcessorDefault(
     companion object {
         private val log = org.slf4j.LoggerFactory.getLogger(this::class.java)
     }
-}
-
-private fun Instant.toString(isoInstant: DateTimeFormatter): String {
-    return isoInstant.format(this)
 }

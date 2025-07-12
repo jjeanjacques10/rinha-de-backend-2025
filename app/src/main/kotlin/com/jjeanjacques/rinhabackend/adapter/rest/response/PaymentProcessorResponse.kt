@@ -1,5 +1,5 @@
 package com.jjeanjacques.rinhabackend.adapter.rest.response
 
-data class PaymentDefaultResponse(
+data class PaymentProcessorResponse(
     val message: String? = null
 )

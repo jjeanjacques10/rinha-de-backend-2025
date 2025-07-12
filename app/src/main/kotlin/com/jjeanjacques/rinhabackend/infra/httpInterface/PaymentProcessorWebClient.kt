@@ -1,4 +1,4 @@
-package com.jjeanjacques.rinhabackend.infra.HttpInterface
+package com.jjeanjacques.rinhabackend.infra.httpInterface
 
 import com.jjeanjacques.rinhabackend.adapter.rest.client.PaymentProcessorClient
 import org.springframework.beans.factory.annotation.Value
