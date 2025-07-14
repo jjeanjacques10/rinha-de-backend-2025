@@ -21,26 +21,25 @@ class PaymentReposityRedis(
             requestedAt = payment.requestedAt.toString(),
             type = payment.type.name
         )
-        redisTemplate.opsForValue().set(payment.correlationId.toString(), paymentProcessorRedis)
+        val key = payment.correlationId.toString()
+        redisTemplate.opsForValue().set(key, paymentProcessorRedis)
+        // Adiciona ao Sorted Set
+        redisTemplate.opsForZSet()
+            .add(paymentsByDateKey, paymentProcessorRedis, payment.requestedAt?.epochSecond!!.toDouble())
         log.info("Saved payment with correlation ID: ${payment.correlationId}, type: ${payment.type}, requested at: ${payment.requestedAt}")
     }
 
-    override fun findById(id: String): Payment? {
-        return redisTemplate.opsForValue().get(id).let {
-            it?.let { paymentProcessorRedis ->
+    override fun findByDateRange(from: Instant, to: Instant): List<Payment> {
+        return redisTemplate.opsForZSet()
+            .rangeByScore(paymentsByDateKey, from.epochSecond.toDouble(), to.epochSecond.toDouble())
+            ?.mapNotNull { paymentProcessorRedis ->
                 Payment(
                     correlationId = UUID.fromString(paymentProcessorRedis.correlationId),
                     amount = paymentProcessorRedis.amount.toBigDecimal(),
-                    requestedAt = Instant.parse(it.requestedAt),
+                    requestedAt = Instant.parse(paymentProcessorRedis.requestedAt),
                     type = TypePayment.valueOf(paymentProcessorRedis.type)
                 )
-            }
-        }
-    }
-
-    override fun getAll(): List<Payment> {
-        return redisTemplate.keys("*")
-            .mapNotNull { findById(it) }
+            }!!
     }
 
     override fun checkExists(correlationId: UUID): Boolean {
@@ -51,6 +50,8 @@ class PaymentReposityRedis(
     }
 
     companion object {
+        private val paymentsByDateKey = "PAYMENTS_BY_DATE"
+
         private val log = org.slf4j.LoggerFactory.getLogger(this::class.java)
     }
 }

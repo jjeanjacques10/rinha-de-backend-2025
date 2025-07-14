@@ -34,11 +34,7 @@ class PaymentService(
         val fromInstant = Instant.parse(if (from.endsWith("Z")) from else "${from}Z")
         val toInstant = Instant.parse(if (to.endsWith("Z")) to else "${to}Z")
 
-        val payments = paymentRepository.getAll().filter {
-            it.requestedAt != null &&
-                    it.requestedAt!!.isAfter(fromInstant) &&
-                    it.requestedAt!!.isBefore(toInstant)
-        }
+        val payments =  paymentRepository.findByDateRange(fromInstant, toInstant)
 
         val paymentsDefault = payments.filter { it.type == TypePayment.DEFAULT }
         val paymentsFallback = payments.filter { it.type == TypePayment.FALLBACK }

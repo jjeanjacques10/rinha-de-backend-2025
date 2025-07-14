@@ -37,10 +37,10 @@ apis:
   payment-processor:
     default:
       url: ${PROCESSOR_DEFAULT_URL:http://localhost:8001}
-      timeout: ${TIMEOUT_PAYMENT_PROCESSOR:500}
+      timeout: ${TIMEOUT_PAYMENT_PROCESSOR:5000}
     fallback:
       url: ${PROCESSOR_FALLBACK_URL:http://localhost:8002}
-      timeout: ${TIMEOUT_PAYMENT_PROCESSOR:500}
+      timeout: ${TIMEOUT_PAYMENT_PROCESSOR:5000}
 
 logging:
   level:
