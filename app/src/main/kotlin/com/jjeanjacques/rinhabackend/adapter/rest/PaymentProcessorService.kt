@@ -14,15 +14,13 @@ class PaymentProcessorService(
     private val paymentProcessorClient: PaymentProcessorClient,
     private val paymentProcessorFallbackClient: PaymentProcessorClient
 ) {
-    fun callPaymentProcessor(payment: Payment): Payment? {
-        return try {
+    suspend fun callPaymentProcessor(payment: Payment) {
+        try {
             requestPaymentDefault(payment)
-            payment
         } catch (ex: Exception) {
             log.error("Error calling payment processor: \\${ex.message}", ex)
             requestFallBackPayment(payment)
             payment.type = TypePayment.FALLBACK
-            payment
         }
     }
 

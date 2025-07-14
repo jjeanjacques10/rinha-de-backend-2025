@@ -4,11 +4,10 @@ import com.jjeanjacques.rinhabackend.adapter.rest.PaymentProcessorService
 import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import com.jjeanjacques.rinhabackend.domain.models.DefaultDetails
 import com.jjeanjacques.rinhabackend.domain.models.FallbackDetails
-import com.jjeanjacques.rinhabackend.domain.models.PaymentSummary
 import com.jjeanjacques.rinhabackend.domain.models.Payment
+import com.jjeanjacques.rinhabackend.domain.models.PaymentSummary
 import com.jjeanjacques.rinhabackend.domain.port.output.PaymentRepository
 import org.springframework.stereotype.Service
-import java.math.BigDecimal
 import java.time.Instant
 
 @Service
@@ -16,11 +15,19 @@ class PaymentService(
     private val paymentProcessorDefault: PaymentProcessorService,
     private val paymentRepository: PaymentRepository
 ) {
-    fun processPayment(payment: Payment) {
+    suspend fun processPayment(payment: Payment) {
         log.info("Requesting payment with correlation ID: ${payment.correlationId}, amount: ${payment.amount}, requested at: ${payment.requestedAt}")
-        val response = paymentProcessorDefault.callPaymentProcessor(payment)
-        log.info("[${payment.correlationId}] Payment processor response: $response")
+        paymentProcessorDefault.callPaymentProcessor(payment)
         paymentRepository.save(payment)
+    }
+
+    fun validatePaymentProcessed(payment: Payment) {
+        if (paymentRepository.checkExists(payment.correlationId)) {
+            log.info("Payment with correlation ID: ${payment.correlationId} already processed.")
+            throw RuntimeException(
+                "Payment with correlation ID: ${payment.correlationId} already processed."
+            )
+        }
     }
 
     fun getSummary(from: String, to: String): PaymentSummary? {
@@ -38,10 +45,10 @@ class PaymentService(
 
         log.info(
             "Payments summary from $from to $to: " +
-                "Default requests: ${paymentsDefault.size}, " +
-                "Total amount: ${paymentsDefault.sumOf { it.amount }}, " +
-                "Fallback requests: ${paymentsFallback.size}, " +
-                "Total amount: ${paymentsFallback.sumOf { it.amount }}"
+                    "Default requests: ${paymentsDefault.size}, " +
+                    "Total amount: ${paymentsDefault.sumOf { it.amount }}, " +
+                    "Fallback requests: ${paymentsFallback.size}, " +
+                    "Total amount: ${paymentsFallback.sumOf { it.amount }}"
         )
 
         return PaymentSummary(

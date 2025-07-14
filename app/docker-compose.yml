@@ -14,19 +14,51 @@ services:
     <<: *api-processor
     container_name: api1
     hostname: api1
-    ports:
-      - 9999:8080
     environment:
       - APP_PORT=8080
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
+      - REDIS_HOST=redis-rinha
+      - DB_HOST=payment-processor-default-db
+      - DB_PORT=5432
+
+  api2:
+    <<: *api-processor
+    container_name: api2
+    hostname: api2
+    environment:
+      - APP_PORT=8080
+      - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
+      - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
+      - REDIS_HOST=redis-rinha
+      - DB_HOST=payment-processor-default-db
+      - DB_PORT=5432
+
+  nginx:
+    image: nginx:latest
+    deploy:
+      resources:
+        limits:
+          cpus: "0.15"
+          memory: "42MB"
+    ports:
+      - "9999:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+    networks:
+      - backend
+      - payment-processor
 
   redis:
     image: redis:7.2-alpine
-    container_name: rinha
+    container_name: redis-rinha
+    hostname: redis-rinha
     command: redis-server --save "" --appendonly no --maxclients 20000
     networks:
-      - backend
+      - payment-processor
     ports:
       - 6379:6379
     healthcheck:

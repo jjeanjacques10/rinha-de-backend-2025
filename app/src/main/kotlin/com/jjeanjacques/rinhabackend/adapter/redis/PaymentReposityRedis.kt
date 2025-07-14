@@ -43,6 +43,13 @@ class PaymentReposityRedis(
             .mapNotNull { findById(it) }
     }
 
+    override fun checkExists(correlationId: UUID): Boolean {
+        return redisTemplate.opsForValue().get(correlationId.toString()) != null
+            .also { exists ->
+                log.info("Payment with correlation ID: $correlationId exists: $exists")
+            }
+    }
+
     companion object {
         private val log = org.slf4j.LoggerFactory.getLogger(this::class.java)
     }

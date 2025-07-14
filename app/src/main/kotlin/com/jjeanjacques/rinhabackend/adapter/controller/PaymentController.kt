@@ -4,6 +4,9 @@ import com.jjeanjacques.rinhabackend.domain.models.Payment
 import com.jjeanjacques.rinhabackend.adapter.controller.response.PaymentResponse
 import com.jjeanjacques.rinhabackend.domain.models.PaymentSummary
 import com.jjeanjacques.rinhabackend.domain.service.PaymentService
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -13,12 +16,18 @@ class PaymentController(
 ) {
 
     @PostMapping("/payments")
-    fun processPayment(
+    suspend fun processPayment(
         @RequestBody request: Payment
     ): ResponseEntity<PaymentResponse> {
         log.info("Received payment request with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
 
-        paymentService.processPayment(request)
+        paymentService.validatePaymentProcessed(request)
+
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            paymentService.processPayment(request)
+        }
+
+        log.info("Payment processed successfully for correlation ID: ${request.correlationId}")
 
         return ResponseEntity.ok(
             PaymentResponse(
@@ -29,7 +38,7 @@ class PaymentController(
     }
 
     @GetMapping("/payments-summary")
-    fun summaryPayments(
+    suspend fun summaryPayments(
         @RequestParam(required = false) from: String,
         @RequestParam(required = false) to: String
     ): ResponseEntity<PaymentSummary> {
