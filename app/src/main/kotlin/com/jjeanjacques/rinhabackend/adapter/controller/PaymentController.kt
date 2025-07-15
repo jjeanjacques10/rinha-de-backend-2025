@@ -5,6 +5,7 @@ import com.jjeanjacques.rinhabackend.adapter.controller.response.PaymentResponse
 import com.jjeanjacques.rinhabackend.domain.models.PaymentSummary
 import com.jjeanjacques.rinhabackend.domain.service.PaymentService
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.springframework.http.ResponseEntity
@@ -18,22 +19,18 @@ class PaymentController(
     @PostMapping("/payments")
     suspend fun processPayment(
         @RequestBody request: Payment
-    ): ResponseEntity<PaymentResponse> {
+    ): PaymentResponse {
         log.info("Received payment request with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
 
         paymentService.validatePaymentProcessed(request)
 
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            paymentService.processPayment(request)
-        }
+        paymentService.processPayment(request)
 
         log.info("Payment processed successfully for correlation ID: ${request.correlationId}")
 
-        return ResponseEntity.ok(
-            PaymentResponse(
-                status = SUCCESS_STATUS,
-                message = "Payment of ${request.amount} processed successfully with correlation ID ${request.correlationId}"
-            )
+        return PaymentResponse(
+            status = SUCCESS_STATUS,
+            message = "Payment of ${request.amount} processed successfully with correlation ID ${request.correlationId}"
         )
     }
 
@@ -41,19 +38,16 @@ class PaymentController(
     suspend fun summaryPayments(
         @RequestParam(required = false) from: String,
         @RequestParam(required = false) to: String
-    ): ResponseEntity<PaymentSummary> {
-        val summary = paymentService.getSummary(from, to)
-        return ResponseEntity.ok(summary)
+    ): PaymentSummary? {
+        return paymentService.getSummary(from, to)
     }
 
     @GetMapping("/payments/service-health")
-    fun serviceHealth(): ResponseEntity<Map<String, Any>> {
+    fun serviceHealth(): Map<String, Any> {
         log.info("Service health check requested")
-        return ResponseEntity.ok(
-            mapOf(
-                "failing" to false,
-                "minResponseTime" to 100
-            )
+        return mapOf(
+            "failing" to false,
+            "minResponseTime" to 100
         )
     }
 

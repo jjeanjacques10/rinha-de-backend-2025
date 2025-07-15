@@ -12,23 +12,21 @@ class AdminController(
 ) {
 
     @GetMapping("/payments-summary")
-    fun summaryPayments(
+    suspend fun summaryPayments(
         @RequestParam(required = false) from: String,
         @RequestParam(required = false) to: String,
         @RequestHeader("X-Rinha-Token") tokenRinha: String?
-    ): ResponseEntity<AdminPaymentSummary> {
-        val summary = adminService.getSummary(from, to)
-        return ResponseEntity.ok(summary)
+    ): AdminPaymentSummary {
+        return adminService.getSummary(from, to)
     }
 
     @PostMapping("/purge-payments")
-    fun purgePayments(
+    suspend fun purgePayments(
         @RequestHeader("X-Rinha-Token") tokenRinha: String?
-    ): ResponseEntity<Map<String, String>> {
+    ): Map<String, String> {
         adminService.deleteAllPayments()
         log.info("All payments purged (development only)")
-        return ResponseEntity.ok()
-            .body(mapOf("message" to "All payments purged."))
+        return mapOf("message" to "All payments purged.")
     }
 
     companion object {

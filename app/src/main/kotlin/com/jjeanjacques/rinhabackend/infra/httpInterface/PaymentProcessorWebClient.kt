@@ -8,7 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.support.WebClientAdapter
 import org.springframework.web.service.invoker.HttpServiceProxyFactory
 
-@Configuration
+//@Configuration
 class PaymentProcessorWebClient {
 
     @Value("\${apis.payment-processor.default.url}")
@@ -58,5 +58,40 @@ class PaymentProcessorWebClient {
         val factory = HttpServiceProxyFactory.builderFor(adapter).build()
 
         return factory.createClient(PaymentProcessorClient::class.java)
+    }
+}
+
+@Configuration
+class PaymentProcessorWebClientConfig {
+
+
+    @Value("\${apis.payment-processor.default.url}")
+    private lateinit var baseUrl: String
+
+    @Value("\${apis.payment-processor.default.timeout:5000}")
+    private var timeout: Long = 5000
+
+    @Value("\${apis.payment-processor.fallback.url}")
+    private lateinit var fallbackBaseUrl: String
+
+    @Value("\${apis.payment-processor.fallback.timeout:5000}")
+    private var fallbackTimeout: Long = 5000
+
+    @Bean(name = ["paymentProcessorWebClient"])
+    fun paymentProcessorWebClient(): WebClient {
+        return WebClient.builder()
+            .baseUrl(baseUrl)
+            .defaultHeader("Content-Type", "application/json")
+            .defaultHeader("Accept", "application/json")
+            .build()
+    }
+
+    @Bean(name = ["paymentProcessorFallbackWebClient"])
+    fun paymentProcessorFallbackWebClient(): WebClient {
+        return WebClient.builder()
+            .baseUrl(fallbackBaseUrl)
+            .defaultHeader("Content-Type", "application/json")
+            .defaultHeader("Accept", "application/json")
+            .build()
     }
 }

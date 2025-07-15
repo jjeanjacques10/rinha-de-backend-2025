@@ -24,7 +24,7 @@ class PaymentProcessorService(
         }
     }
 
-    fun requestPaymentDefault(payment: Payment): PaymentProcessorResponse? {
+    suspend fun requestPaymentDefault(payment: Payment): PaymentProcessorResponse? {
         return paymentProcessorClient.requestPaymentProcessorDefault(
             PaymentProcessorRequest(
                 correlationId = payment.correlationId,
@@ -36,9 +36,9 @@ class PaymentProcessorService(
         )
     }
 
-    fun requestFallBackPayment(payment: Payment): PaymentProcessorResponse? {
+    suspend fun requestFallBackPayment(payment: Payment): PaymentProcessorResponse? {
         log.warn("🔥 Falling back to fallback payment processor for correlation ID: \\${payment.correlationId} 🔥")
-        return paymentProcessorFallbackClient.requestPaymentProcessorDefault(
+        return paymentProcessorFallbackClient.requestPaymentProcessorFallback(
             PaymentProcessorRequest(
                 correlationId = payment.correlationId,
                 amount = payment.amount,
