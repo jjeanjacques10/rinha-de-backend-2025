@@ -70,8 +70,8 @@ class PaymentReposityRedis(
         return exists
     }
 
-    override fun getPendingPayments(): List<Payment> {
-        return redisTemplate.keys("*#${StatusPayment.PENDING.name}")
+    override fun getPaymentsByStatus(status: StatusPayment): List<Payment> {
+        return redisTemplate.keys("*#${status.name}")
             .mapNotNull { key ->
                 redisTemplate.opsForValue().get(key)
             }.map { paymentProcessorRedis ->

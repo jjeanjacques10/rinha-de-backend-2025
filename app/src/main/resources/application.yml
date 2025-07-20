@@ -44,4 +44,4 @@ apis:
 
 logging:
   level:
-    root: ${LOG_LEVEL:ERROR}
+    root: ${LOG_LEVEL:INFO}

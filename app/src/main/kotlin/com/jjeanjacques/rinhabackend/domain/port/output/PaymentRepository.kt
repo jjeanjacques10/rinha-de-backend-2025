@@ -10,5 +10,5 @@ interface PaymentRepository {
     fun delete(correlationId: UUID, status: StatusPayment)
     fun findByDateRange(from: Instant, to: Instant): List<Payment>
     fun checkExists(correlationId: UUID, status: StatusPayment? = null): Boolean
-    fun getPendingPayments(): List<Payment>
+    fun getPaymentsByStatus(status: StatusPayment): List<Payment>
 }

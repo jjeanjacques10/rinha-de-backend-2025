@@ -4,10 +4,12 @@ import com.jjeanjacques.rinhabackend.adapter.output.rest.request.PaymentProcesso
 import com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorResponse
 import com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorStatusResponse
 import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
+import com.jjeanjacques.rinhabackend.domain.models.Payment
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
+import java.util.UUID
 
 @Component
 class PaymentProcessorClient(
@@ -39,6 +41,24 @@ class PaymentProcessorClient(
             .awaitSingle()
     }
 
+    suspend fun requestPaymentById(
+        paymentId: UUID
+    ): Payment? {
+        return try {
+            webClient.get()
+                .uri("/payments/$paymentId")
+                .retrieve()
+                .bodyToMono(Payment::class.java)
+                .awaitSingle()
+        } catch (ex: Exception) {
+            webClientFallback.get()
+                .uri("/payments/$paymentId")
+                .retrieve()
+                .bodyToMono(Payment::class.java)
+                .awaitSingle()
+        }
+    }
+
 
     suspend fun requestPaymentProcessorStatus(
         type: TypePayment
@@ -56,6 +76,8 @@ class PaymentProcessorClient(
                     .retrieve()
                     .bodyToMono(PaymentProcessorStatusResponse::class.java)
                     .awaitSingle()
+
+                TypePayment.TIMEOUT -> TODO()
             }
         } catch (ex: Exception) {
             throw RuntimeException("Error requesting payment processor status: ${ex.message}", ex)

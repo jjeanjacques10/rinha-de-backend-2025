@@ -11,7 +11,7 @@ class ValidateStatusScheduler(
 
     @Scheduled(fixedRate = 6000)
     suspend fun scheduleValidateStatus() {
-        log.info("Starting scheduled validation of payment processor status")
+        log.debug("Starting scheduled validation of payment processor status")
         validateService.validatePaymentProcessorStatus()
     }
 

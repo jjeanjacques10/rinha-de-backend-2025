@@ -4,6 +4,7 @@ import com.jjeanjacques.rinhabackend.adapter.output.rest.PaymentProcessorService
 import com.jjeanjacques.rinhabackend.domain.enums.StatusPayment
 import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import com.jjeanjacques.rinhabackend.domain.exceptions.AlreadyProcessedRuntimeException
+import com.jjeanjacques.rinhabackend.domain.exceptions.TimeoutRuntimeException
 import com.jjeanjacques.rinhabackend.domain.models.DefaultDetails
 import com.jjeanjacques.rinhabackend.domain.models.FallbackDetails
 import com.jjeanjacques.rinhabackend.domain.models.Payment
@@ -31,7 +32,13 @@ class PaymentService(
             statusPayment = try {
                 paymentProcessorService.callPaymentProcessor(payment, paymentType)
                 StatusPayment.SUCCESS
-            } catch (e: Exception) {
+            } catch (ex: AlreadyProcessedRuntimeException) {
+                log.info("Payment with correlation ID: ${payment.correlationId} already processed, skipping.")
+                StatusPayment.SUCCESS
+            } catch (ex: TimeoutRuntimeException) {
+                log.info("Payment processor timed out for correlation ID: ${payment.correlationId}, falling back to fallback processor.")
+                StatusPayment.TIMEOUT
+            } catch (ex: Exception) {
                 log.error("Payment processor failed for correlation ID: ${payment.correlationId}, falling back to fallback processor.")
                 StatusPayment.PENDING
             }
@@ -46,11 +53,9 @@ class PaymentService(
     }
 
     suspend fun processPendingPayments() {
-        log.info("Processing pending payments...")
-
-        val pendingPayments = paymentRepository.getPendingPayments()
+        val pendingPayments = paymentRepository.getPaymentsByStatus(StatusPayment.PENDING)
         if (pendingPayments.isEmpty()) {
-            log.info("No pending payments to process.")
+            log.debug("No pending payments to process.")
             return
         }
 
@@ -71,6 +76,39 @@ class PaymentService(
                     return@forEach
                 }
                 log.error("Failed to process pending payment with correlation ID: ${payment.correlationId}", ex)
+            }
+        }
+    }
+
+    suspend fun processTimeoutPayments() {
+        val timeoutPayments = paymentRepository.getPaymentsByStatus(StatusPayment.TIMEOUT)
+        if (timeoutPayments.isEmpty()) {
+            log.debug("No timeout payments to process.")
+            return
+        }
+
+        timeoutPayments.forEach { payment ->
+            try {
+                log.info("Processing timeout payment with correlation ID: ${payment.correlationId}")
+
+                val response = paymentProcessorService.requestPaymentById(payment.correlationId)
+
+                if (response == null) {
+                    val status = processPayment(payment)
+                    if (status == StatusPayment.SUCCESS) {
+                        paymentRepository.delete(payment.correlationId, StatusPayment.TIMEOUT)
+                    }
+                    return@forEach
+                }
+                paymentRepository.delete(payment.correlationId, StatusPayment.TIMEOUT)
+                paymentRepository.save(payment, StatusPayment.SUCCESS)
+            } catch (ex: Exception) {
+                if (ex is AlreadyProcessedRuntimeException) {
+                    paymentRepository.delete(payment.correlationId, StatusPayment.TIMEOUT)
+                    paymentRepository.save(payment, StatusPayment.SUCCESS)
+                    return@forEach
+                }
+                log.error("Failed to process timeout payment with correlation ID: ${payment.correlationId}", ex)
             }
         }
     }

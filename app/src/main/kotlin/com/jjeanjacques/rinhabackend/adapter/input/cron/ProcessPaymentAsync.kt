@@ -11,14 +11,21 @@ class ProcessPaymentAsync(
     val paymentService: PaymentService
 ) {
 
-    @Scheduled(fixedRate = 250)
+    @Scheduled(fixedRate = 100)
     suspend fun processPaymentAsync() {
-        log.info("Validating payment processor status to process payments asynchronously")
-
         if (validateStatusPort.canProcessPayment() != null) {
             paymentService.processPendingPayments()
         } else {
             log.error("Payment processor is not available, cannot process payments asynchronously.")
+        }
+    }
+
+    @Scheduled(fixedRate = 100)
+    suspend fun processTimeoutPayments() {
+        if (validateStatusPort.canProcessPayment() != null) {
+            paymentService.processTimeoutPayments()
+        } else {
+            log.error("Payment processor is not available, cannot process timeout payments.")
         }
     }
 

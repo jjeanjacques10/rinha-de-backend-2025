@@ -20,7 +20,7 @@ class ValidateStatusRedis(
     override fun get(key: String): String {
         return redisTemplate.opsForValue().get(key)
             .also { value ->
-                log.info("Retrieved status for key: $key, value: $value")
+                log.debug("Retrieved status for key: $key, value: $value")
             } ?: "ok"
     }
 
@@ -37,7 +37,7 @@ class ValidateStatusRedis(
             timeoutStatus -> TypePayment.TIMEOUT
             else -> null
         }.also { type ->
-            log.info("Can process payment with type: $type")
+            log.debug("Can process payment with type: {}", type)
         }
     }
 

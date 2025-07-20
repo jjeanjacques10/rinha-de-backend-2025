@@ -18,20 +18,18 @@ class ValidateService(
         val status = paymentProcessorService.requestPaymentProcessorStatus(TypePayment.DEFAULT)
         val statusFallback = paymentProcessorService.requestPaymentProcessorStatus(TypePayment.FALLBACK)
 
-        saveStatus(status, API_PAYMENT_PROCESSOR_STATUS, API_PAYMENT_PROCESSOR_FALLBACK_STATUS)
-        saveStatus(statusFallback, API_PAYMENT_PROCESSOR_FALLBACK_STATUS, API_PAYMENT_PROCESSOR_FALLBACK_STATUS)
+        saveStatus(status, API_PAYMENT_PROCESSOR_STATUS)
+        saveStatus(statusFallback, API_PAYMENT_PROCESSOR_FALLBACK_STATUS)
 
-        log.info(
-            "Payment processor status updated: " +
-                    "Default status failing: ${status.failing}, " +
-                    "Fallback status failing: ${statusFallback.failing}"
-        )
+        if (status.failing && statusFallback.failing) {
+            log.warn("Both payment processors are failing. Default: ${status.failing}, Fallback: ${statusFallback.failing}")
+        }
     }
 
-    private fun saveStatus(status: PaymentProcessorStatusResponse, key: String, fallbackKey: String) {
+    private fun saveStatus(status: PaymentProcessorStatusResponse, key: String) {
         when {
             status.failing -> validateStatusPort.save(key, "failing")
-            status.minResponseTime >= 500 -> validateStatusPort.save(fallbackKey, "slow")
+            status.minResponseTime >= 500 -> validateStatusPort.save(key, "slow")
             else -> validateStatusPort.save(key, "ok")
         }
     }
