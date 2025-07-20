@@ -8,8 +8,6 @@ import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import com.jjeanjacques.rinhabackend.domain.models.Payment
 import com.jjeanjacques.rinhabackend.domain.utils.toString
 import org.slf4j.LoggerFactory
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Component
 import java.time.format.DateTimeFormatter
 
@@ -24,16 +22,19 @@ class PaymentProcessorService(
             when (paymentType) {
                 TypePayment.DEFAULT -> requestPaymentDefault(payment)
                 TypePayment.FALLBACK -> {
-                    requestFallBackPayment(payment)
                     payment.type = TypePayment.FALLBACK
+                    requestFallBackPayment(payment)
                 }
+
+                TypePayment.TIMEOUT -> throw IllegalArgumentException("Unsupported payment type: $paymentType")
+
             }
         } catch (ex: Exception) {
             log.error("Error calling payment processor: ${ex.message}", ex)
+            payment.type = TypePayment.FALLBACK
             if (paymentType == TypePayment.DEFAULT) {
                 requestFallBackPayment(payment)
             }
-            payment.type = TypePayment.FALLBACK
         }
     }
 
@@ -62,14 +63,12 @@ class PaymentProcessorService(
         )
     }
 
-    @Retryable(retryFor = [Exception::class],
-        maxAttempts = 3,
-        backoff = Backoff(delay = 100))
+
     suspend fun requestPaymentProcessorStatus(type: TypePayment): PaymentProcessorStatusResponse {
         return try {
             paymentProcessorClient.requestPaymentProcessorStatus(type)!!
         } catch (ex: Exception) {
-            log.error("Error requesting payment processor status for type $type: ${ex.message}", ex)
+            log.warn("Error requesting payment processor status for type $type: ${ex.message}", ex)
             throw ex
         }
     }

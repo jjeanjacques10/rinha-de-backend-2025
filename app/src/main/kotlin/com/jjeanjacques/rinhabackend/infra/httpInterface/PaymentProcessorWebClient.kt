@@ -68,14 +68,14 @@ class PaymentProcessorWebClientConfig {
     @Value("\${apis.payment-processor.default.url}")
     private lateinit var baseUrl: String
 
-    @Value("\${apis.payment-processor.default.timeout:5000}")
-    private var timeout: Long = 1000
+    @Value("\${apis.payment-processor.default.timeout:250}")
+    private var timeout: Long = 250
 
     @Value("\${apis.payment-processor.fallback.url}")
     private lateinit var fallbackBaseUrl: String
 
-    @Value("\${apis.payment-processor.fallback.timeout:5000}")
-    private var fallbackTimeout: Long = 1000
+    @Value("\${apis.payment-processor.fallback.timeout:500}")
+    private var fallbackTimeout: Long = 500
 
     @Bean(name = ["paymentProcessorWebClient"])
     fun paymentProcessorWebClient(): WebClient {

@@ -28,9 +28,13 @@ class ValidateStatusRedis(
         val defaultStatus = get(API_PAYMENT_PROCESSOR_STATUS) == "ok"
         val fallbackStatus = get(API_PAYMENT_PROCESSOR_FALLBACK_STATUS) == "ok"
 
+        val timeoutStatus = get(API_PAYMENT_PROCESSOR_STATUS) == "slow" ||
+                get(API_PAYMENT_PROCESSOR_FALLBACK_STATUS) == "slow"
+
         return when {
             defaultStatus -> TypePayment.DEFAULT
             fallbackStatus -> TypePayment.FALLBACK
+            timeoutStatus -> TypePayment.TIMEOUT
             else -> null
         }.also { type ->
             log.info("Can process payment with type: $type")

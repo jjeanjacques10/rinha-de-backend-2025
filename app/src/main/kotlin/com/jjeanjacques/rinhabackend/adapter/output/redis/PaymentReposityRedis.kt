@@ -34,13 +34,13 @@ class PaymentReposityRedis(
     }
 
     override fun delete(correlationId: UUID, status: StatusPayment) {
-        val keyPrefix = correlationId.toString() + "#" + status.name
+        val keyPrefix = "$correlationId#"
         val keys = redisTemplate.keys("$keyPrefix*")
         if (keys != null && keys.isNotEmpty()) {
             redisTemplate.delete(keys)
             log.info("Deleted payment with correlation ID: $correlationId")
         } else {
-            log.warn("No payment found with correlation ID: $correlationId")
+            log.error("No payment found with correlation ID: $correlationId")
         }
     }
 
@@ -57,14 +57,20 @@ class PaymentReposityRedis(
             }!!
     }
 
-    override fun checkExists(correlationId: UUID): Boolean {
-        val keyPrefix = correlationId.toString() + "#"
-        val exists = redisTemplate.keys("$keyPrefix*").isNotEmpty()
-        log.info("Payment with correlation ID prefix: $correlationId exists: $exists")
+    override fun checkExists(correlationId: UUID, status: StatusPayment?): Boolean {
+        val exists = if (status != null) {
+            redisTemplate.hasKey("$correlationId#${status.name}").also {
+                log.info("Payment with correlation ID: $correlationId and status: $status exists: $it")
+            }
+        } else {
+            redisTemplate.keys("${correlationId}#*").isNotEmpty().also {
+                log.info("Payment with correlation ID prefix: $correlationId exists: $it")
+            }
+        }
         return exists
     }
 
-    override fun getPendentPayments(): List<Payment> {
+    override fun getPendingPayments(): List<Payment> {
         return redisTemplate.keys("*#${StatusPayment.PENDING.name}")
             .mapNotNull { key ->
                 redisTemplate.opsForValue().get(key)

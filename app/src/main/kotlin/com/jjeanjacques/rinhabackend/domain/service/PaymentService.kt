@@ -36,7 +36,7 @@ class PaymentService(
                 StatusPayment.PENDING
             }
         } else {
-            log.error("Payment processor is not available for correlation ID: ${payment.correlationId}")
+            log.warn("Payment processor is not available for correlation ID: ${payment.correlationId}")
             statusPayment = StatusPayment.PENDING
         }
 
@@ -48,7 +48,7 @@ class PaymentService(
     suspend fun processPendingPayments() {
         log.info("Processing pending payments...")
 
-        val pendingPayments = paymentRepository.getPendentPayments()
+        val pendingPayments = paymentRepository.getPendingPayments()
         if (pendingPayments.isEmpty()) {
             log.info("No pending payments to process.")
             return
@@ -58,25 +58,25 @@ class PaymentService(
             try {
                 log.info("Processing pending payment with correlation ID: ${payment.correlationId}")
 
-                validatePaymentProcessed(payment)
+                validatePaymentProcessed(payment, StatusPayment.SUCCESS)
 
                 val status = processPayment(payment)
                 if (status == StatusPayment.SUCCESS) {
                     paymentRepository.delete(payment.correlationId, StatusPayment.PENDING)
                 }
-            } catch (e: Exception) {
-                if (e is AlreadyProcessedRuntimeException) {
+            } catch (ex: Exception) {
+                if (ex is AlreadyProcessedRuntimeException) {
                     paymentRepository.delete(payment.correlationId, StatusPayment.PENDING)
                     paymentRepository.save(payment, StatusPayment.SUCCESS)
                     return@forEach
                 }
-                log.error("Failed to process pending payment with correlation ID: ${payment.correlationId}", e)
+                log.error("Failed to process pending payment with correlation ID: ${payment.correlationId}", ex)
             }
         }
     }
 
-    fun validatePaymentProcessed(payment: Payment) {
-        if (paymentRepository.checkExists(payment.correlationId)) {
+    fun validatePaymentProcessed(payment: Payment, status: StatusPayment? = null) {
+        if (paymentRepository.checkExists(payment.correlationId, status)) {
             log.info("Payment with correlation ID: ${payment.correlationId} already processed.")
             throw AlreadyProcessedRuntimeException(
                 "Payment with correlation ID: ${payment.correlationId} already processed."

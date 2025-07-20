@@ -11,7 +11,7 @@ class ProcessPaymentAsync(
     val paymentService: PaymentService
 ) {
 
-    @Scheduled(fixedRate = 1000)
+    @Scheduled(fixedRate = 250)
     suspend fun processPaymentAsync() {
         log.info("Validating payment processor status to process payments asynchronously")
 
