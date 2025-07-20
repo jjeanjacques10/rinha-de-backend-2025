@@ -1,7 +1,8 @@
-package com.jjeanjacques.rinhabackend.adapter.controller
+package com.jjeanjacques.rinhabackend.adapter.input.controller
 
 import com.jjeanjacques.rinhabackend.domain.models.AdminPaymentSummary
 import com.jjeanjacques.rinhabackend.domain.service.AdminService
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -10,15 +11,6 @@ import org.springframework.web.bind.annotation.*
 class AdminController(
     private val adminService: AdminService
 ) {
-
-    @GetMapping("/payments-summary")
-    suspend fun summaryPayments(
-        @RequestParam(required = false) from: String,
-        @RequestParam(required = false) to: String,
-        @RequestHeader("X-Rinha-Token") tokenRinha: String?
-    ): AdminPaymentSummary {
-        return adminService.getSummary(from, to)
-    }
 
     @PostMapping("/purge-payments")
     suspend fun purgePayments(
@@ -30,6 +22,6 @@ class AdminController(
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(this::class.java)
+        private val log = LoggerFactory.getLogger(this::class.java)
     }
 }

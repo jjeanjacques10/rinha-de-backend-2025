@@ -1,6 +1,6 @@
-package com.jjeanjacques.rinhabackend.adapter.database
+package com.jjeanjacques.rinhabackend.adapter.output.database
 
-import com.jjeanjacques.rinhabackend.adapter.database.entity.PaymentEntity
+import com.jjeanjacques.rinhabackend.adapter.output.database.entity.PaymentEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository

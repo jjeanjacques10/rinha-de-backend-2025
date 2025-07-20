@@ -1,14 +1,10 @@
-package com.jjeanjacques.rinhabackend.adapter.controller
+package com.jjeanjacques.rinhabackend.adapter.input.controller
 
+import com.jjeanjacques.rinhabackend.adapter.input.controller.response.PaymentResponse
 import com.jjeanjacques.rinhabackend.domain.models.Payment
-import com.jjeanjacques.rinhabackend.adapter.controller.response.PaymentResponse
 import com.jjeanjacques.rinhabackend.domain.models.PaymentSummary
 import com.jjeanjacques.rinhabackend.domain.service.PaymentService
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import org.springframework.http.ResponseEntity
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -42,19 +38,10 @@ class PaymentController(
         return paymentService.getSummary(from, to)
     }
 
-    @GetMapping("/payments/service-health")
-    fun serviceHealth(): Map<String, Any> {
-        log.info("Service health check requested")
-        return mapOf(
-            "failing" to false,
-            "minResponseTime" to 100
-        )
-    }
-
     companion object {
         private val SUCCESS_STATUS = "success"
         private const val ERROR_STATUS = "error"
-        private val log = org.slf4j.LoggerFactory.getLogger(this::class.java)
+        private val log = LoggerFactory.getLogger(this::class.java)
     }
 
 }

@@ -1,4 +1,4 @@
-package com.jjeanjacques.rinhabackend.adapter.database.entity
+package com.jjeanjacques.rinhabackend.adapter.output.database.entity
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

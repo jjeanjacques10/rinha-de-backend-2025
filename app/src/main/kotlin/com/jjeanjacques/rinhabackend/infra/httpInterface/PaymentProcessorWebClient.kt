@@ -1,6 +1,6 @@
 package com.jjeanjacques.rinhabackend.infra.httpInterface
 
-import com.jjeanjacques.rinhabackend.adapter.rest.client.PaymentProcessorClient
+import com.jjeanjacques.rinhabackend.adapter.output.rest.client.PaymentProcessorClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -69,13 +69,13 @@ class PaymentProcessorWebClientConfig {
     private lateinit var baseUrl: String
 
     @Value("\${apis.payment-processor.default.timeout:5000}")
-    private var timeout: Long = 5000
+    private var timeout: Long = 1000
 
     @Value("\${apis.payment-processor.fallback.url}")
     private lateinit var fallbackBaseUrl: String
 
     @Value("\${apis.payment-processor.fallback.timeout:5000}")
-    private var fallbackTimeout: Long = 5000
+    private var fallbackTimeout: Long = 1000
 
     @Bean(name = ["paymentProcessorWebClient"])
     fun paymentProcessorWebClient(): WebClient {
@@ -83,7 +83,12 @@ class PaymentProcessorWebClientConfig {
             .baseUrl(baseUrl)
             .defaultHeader("Content-Type", "application/json")
             .defaultHeader("Accept", "application/json")
-            .build()
+            .clientConnector(
+                org.springframework.http.client.reactive.ReactorClientHttpConnector(
+                    reactor.netty.http.client.HttpClient.create()
+                        .responseTimeout(java.time.Duration.ofMillis(timeout))
+                )
+            ).build()
     }
 
     @Bean(name = ["paymentProcessorFallbackWebClient"])
@@ -92,6 +97,11 @@ class PaymentProcessorWebClientConfig {
             .baseUrl(fallbackBaseUrl)
             .defaultHeader("Content-Type", "application/json")
             .defaultHeader("Accept", "application/json")
-            .build()
+            .clientConnector(
+                org.springframework.http.client.reactive.ReactorClientHttpConnector(
+                    reactor.netty.http.client.HttpClient.create()
+                        .responseTimeout(java.time.Duration.ofMillis(fallbackTimeout))
+                )
+            ).build()
     }
 }

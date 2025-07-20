@@ -1,7 +1,6 @@
 package com.jjeanjacques.rinhabackend.infra
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.jjeanjacques.rinhabackend.adapter.redis.entity.PaymentProcessorRedis
+import com.jjeanjacques.rinhabackend.adapter.output.redis.entity.PaymentProcessorRedis
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.connection.RedisConnectionFactory

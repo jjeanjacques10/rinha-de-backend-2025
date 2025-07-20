@@ -1,4 +1,4 @@
-package com.jjeanjacques.rinhabackend.adapter.controller.response
+package com.jjeanjacques.rinhabackend.adapter.input.controller.response
 
 data class PaymentResponse (
     val status: String,

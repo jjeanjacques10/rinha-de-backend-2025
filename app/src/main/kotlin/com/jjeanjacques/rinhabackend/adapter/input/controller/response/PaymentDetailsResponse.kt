@@ -1,4 +1,4 @@
-package com.jjeanjacques.rinhabackend.adapter.controller.response
+package com.jjeanjacques.rinhabackend.adapter.input.controller.response
 
 import java.math.BigDecimal
 import java.time.Instant

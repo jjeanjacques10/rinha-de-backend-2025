@@ -1,4 +1,4 @@
-package com.jjeanjacques.rinhabackend.adapter.redis.entity
+package com.jjeanjacques.rinhabackend.adapter.output.redis.entity
 
 data class PaymentProcessorRedis(
     var correlationId: String,

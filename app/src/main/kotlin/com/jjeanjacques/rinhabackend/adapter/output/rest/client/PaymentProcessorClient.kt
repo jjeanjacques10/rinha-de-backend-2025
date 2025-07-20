@@ -1,7 +1,9 @@
-package com.jjeanjacques.rinhabackend.adapter.rest.client
+package com.jjeanjacques.rinhabackend.adapter.output.rest.client
 
-import com.jjeanjacques.rinhabackend.adapter.rest.request.PaymentProcessorRequest
-import com.jjeanjacques.rinhabackend.adapter.rest.response.PaymentProcessorResponse
+import com.jjeanjacques.rinhabackend.adapter.output.rest.request.PaymentProcessorRequest
+import com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorResponse
+import com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorStatusResponse
+import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
@@ -35,6 +37,29 @@ class PaymentProcessorClient(
             .retrieve()
             .bodyToMono(PaymentProcessorResponse::class.java)
             .awaitSingle()
+    }
+
+
+    suspend fun requestPaymentProcessorStatus(
+        type: TypePayment
+    ): PaymentProcessorStatusResponse? {
+        return try {
+            when (type) {
+                TypePayment.DEFAULT -> webClient.get()
+                    .uri("/payments/service-health")
+                    .retrieve()
+                    .bodyToMono(PaymentProcessorStatusResponse::class.java)
+                    .awaitSingle()
+
+                TypePayment.FALLBACK -> webClientFallback.get()
+                    .uri("/payments/service-health")
+                    .retrieve()
+                    .bodyToMono(PaymentProcessorStatusResponse::class.java)
+                    .awaitSingle()
+            }
+        } catch (ex: Exception) {
+            throw RuntimeException("Error requesting payment processor status: ${ex.message}", ex)
+        }
     }
 
 
