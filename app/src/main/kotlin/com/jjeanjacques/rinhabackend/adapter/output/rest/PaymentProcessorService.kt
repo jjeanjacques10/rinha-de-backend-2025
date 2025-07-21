@@ -69,7 +69,7 @@ class PaymentProcessorService(
     }
 
     suspend fun requestFallBackPayment(payment: Payment): PaymentProcessorResponse? {
-        log.warn("🔥 Falling back to fallback payment processor for correlation ID: \\${payment.correlationId} 🔥")
+        log.warn("🔥 Falling back to fallback payment processor for correlation ID: ${payment.correlationId} 🔥")
         return paymentProcessorFallbackClient.requestPaymentProcessorFallback(
             PaymentProcessorRequest(
                 correlationId = payment.correlationId,
@@ -87,18 +87,15 @@ class PaymentProcessorService(
         } catch (ex: WebClientResponseException) {
             if (ex.statusCode == HttpResponseStatus.NOT_FOUND) {
                 log.warn("Payment with ID $paymentId not found: ${ex.message}", ex)
-                null
-            } else {
-                log.error("Error requesting payment by ID $paymentId: ${ex.message}", ex)
-                throw ex
             }
+            null
         }
     }
 
 
-    suspend fun requestPaymentProcessorStatus(type: TypePayment): PaymentProcessorStatusResponse {
+    suspend fun requestPaymentProcessorStatus(type: TypePayment): PaymentProcessorStatusResponse? {
         return try {
-            paymentProcessorClient.requestPaymentProcessorStatus(type)!!
+            paymentProcessorClient.requestPaymentProcessorStatus(type)
         } catch (ex: Exception) {
             log.warn("Error requesting payment processor status for type $type: ${ex.message}", ex)
             throw ex

@@ -83,12 +83,13 @@ class PaymentProcessorWebClientConfig {
             .baseUrl(baseUrl)
             .defaultHeader("Content-Type", "application/json")
             .defaultHeader("Accept", "application/json")
-            .clientConnector(
-                org.springframework.http.client.reactive.ReactorClientHttpConnector(
-                    reactor.netty.http.client.HttpClient.create()
-                        .responseTimeout(java.time.Duration.ofMillis(timeout))
-                )
-            ).build()
+//            .clientConnector(
+//                org.springframework.http.client.reactive.ReactorClientHttpConnector(
+//                    reactor.netty.http.client.HttpClient.create()
+//                        .responseTimeout(java.time.Duration.ofMillis(timeout))
+//                )
+//            )
+            .build()
     }
 
     @Bean(name = ["paymentProcessorFallbackWebClient"])
@@ -97,11 +98,12 @@ class PaymentProcessorWebClientConfig {
             .baseUrl(fallbackBaseUrl)
             .defaultHeader("Content-Type", "application/json")
             .defaultHeader("Accept", "application/json")
-            .clientConnector(
-                org.springframework.http.client.reactive.ReactorClientHttpConnector(
-                    reactor.netty.http.client.HttpClient.create()
-                        .responseTimeout(java.time.Duration.ofMillis(fallbackTimeout))
-                )
-            ).build()
+//            .clientConnector(
+//                org.springframework.http.client.reactive.ReactorClientHttpConnector(
+//                    reactor.netty.http.client.HttpClient.create()
+//                        .responseTimeout(java.time.Duration.ofMillis(fallbackTimeout))
+//                )
+//            )
+            .build()
     }
 }

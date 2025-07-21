@@ -9,7 +9,7 @@ class ValidateStatusScheduler(
     private val validateService: ValidateService
 ) {
 
-    @Scheduled(fixedRate = 6000)
+    @Scheduled(fixedRate = 5000)
     suspend fun scheduleValidateStatus() {
         log.debug("Starting scheduled validation of payment processor status")
         validateService.validatePaymentProcessorStatus()

@@ -5,11 +5,13 @@ import com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcess
 import com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorStatusResponse
 import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import com.jjeanjacques.rinhabackend.domain.models.Payment
+import io.netty.handler.codec.http.HttpResponseStatus
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
-import java.util.UUID
+import org.springframework.web.reactive.function.client.WebClientResponseException
+import java.util.*
 
 @Component
 class PaymentProcessorClient(
@@ -19,27 +21,21 @@ class PaymentProcessorClient(
     private val webClientFallback: WebClient
 ) {
 
-    suspend fun requestPaymentProcessorDefault(
-        paymentProcessorRequest: PaymentProcessorRequest
-    ): PaymentProcessorResponse? {
-        return webClient.post()
+    suspend fun requestPaymentProcessorDefault(request: PaymentProcessorRequest): PaymentProcessorResponse? =
+        webClient.post()
             .uri("/payments")
-            .bodyValue(paymentProcessorRequest)
+            .bodyValue(request)
             .retrieve()
             .bodyToMono(PaymentProcessorResponse::class.java)
             .awaitSingle()
-    }
 
-    suspend fun requestPaymentProcessorFallback(
-        paymentProcessorRequest: PaymentProcessorRequest
-    ): PaymentProcessorResponse? {
-        return webClientFallback.post()
+    suspend fun requestPaymentProcessorFallback(request: PaymentProcessorRequest): PaymentProcessorResponse? =
+        webClientFallback.post()
             .uri("/payments")
-            .bodyValue(paymentProcessorRequest)
+            .bodyValue(request)
             .retrieve()
             .bodyToMono(PaymentProcessorResponse::class.java)
             .awaitSingle()
-    }
 
     suspend fun requestPaymentById(
         paymentId: UUID
@@ -65,26 +61,33 @@ class PaymentProcessorClient(
     ): PaymentProcessorStatusResponse? {
         return try {
             when (type) {
-                TypePayment.DEFAULT -> webClient.get()
-                    .uri("/payments/service-health")
-                    .retrieve()
-                    .bodyToMono(PaymentProcessorStatusResponse::class.java)
-                    .awaitSingle()
-
                 TypePayment.FALLBACK -> webClientFallback.get()
                     .uri("/payments/service-health")
                     .retrieve()
                     .bodyToMono(PaymentProcessorStatusResponse::class.java)
                     .awaitSingle()
 
-                TypePayment.TIMEOUT -> TODO()
+                else -> webClient.get()
+                    .uri("/payments/service-health")
+                    .retrieve()
+                    .bodyToMono(PaymentProcessorStatusResponse::class.java)
+                    .awaitSingle()
             }
+        } catch (ex: WebClientResponseException) {
+            if (ex.statusCode == HttpResponseStatus.TOO_MANY_REQUESTS) {
+                log.warn("Rate limit exceeded for payment processor")
+            } else {
+                log.error("Error requesting payment processor status: ${ex.message}", ex)
+            }
+            return null
         } catch (ex: Exception) {
             throw RuntimeException("Error requesting payment processor status: ${ex.message}", ex)
         }
     }
 
-
+    companion object {
+        private val log = org.slf4j.LoggerFactory.getLogger(PaymentProcessorClient::class.java)
+    }
 }
 
 

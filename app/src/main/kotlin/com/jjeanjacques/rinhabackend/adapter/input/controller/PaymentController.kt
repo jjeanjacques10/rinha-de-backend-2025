@@ -20,9 +20,7 @@ class PaymentController(
 
         paymentService.validatePaymentProcessed(request)
 
-        paymentService.processPayment(request)
-
-        log.info("Payment processed successfully for correlation ID: ${request.correlationId}")
+        paymentService.sendToProcessor(request)
 
         return PaymentResponse(
             status = SUCCESS_STATUS,

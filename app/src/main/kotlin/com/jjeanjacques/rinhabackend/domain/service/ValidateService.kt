@@ -15,22 +15,48 @@ class ValidateService(
 ) {
 
     suspend fun validatePaymentProcessorStatus() {
+
+        val lastStatus = validateStatusPort.get(API_PAYMENT_PROCESSOR_STATUS)
+
+        if (lastStatus != null) {
+            log.info("Payment processor status is already validated as ok.")
+            return
+        } else log.info("Validating payment processor status...")
+
         val status = paymentProcessorService.requestPaymentProcessorStatus(TypePayment.DEFAULT)
         val statusFallback = paymentProcessorService.requestPaymentProcessorStatus(TypePayment.FALLBACK)
 
         saveStatus(status, API_PAYMENT_PROCESSOR_STATUS)
         saveStatus(statusFallback, API_PAYMENT_PROCESSOR_FALLBACK_STATUS)
 
-        if (status.failing && statusFallback.failing) {
-            log.warn("Both payment processors are failing. Default: ${status.failing}, Fallback: ${statusFallback.failing}")
+        if (status != null && statusFallback != null && status.failing && statusFallback.failing) {
+            log.error("Both payment processors are failing. Default: ${status.failing}, Fallback: ${statusFallback.failing}")
         }
     }
 
-    private fun saveStatus(status: PaymentProcessorStatusResponse, key: String) {
+    private fun saveStatus(status: PaymentProcessorStatusResponse?, key: String) {
+        if (status == null) return
         when {
             status.failing -> validateStatusPort.save(key, "failing")
-            status.minResponseTime >= 500 -> validateStatusPort.save(key, "slow")
+            status.minResponseTime >= 800 -> validateStatusPort.save(key, "slow")
             else -> validateStatusPort.save(key, "ok")
+        }
+    }
+
+    fun canProcessPayment(): TypePayment? {
+        val defaultStatus = validateStatusPort.get(API_PAYMENT_PROCESSOR_STATUS) == "ok"
+        val fallbackStatus = validateStatusPort.get(API_PAYMENT_PROCESSOR_FALLBACK_STATUS) == "ok"
+
+        val timeoutStatus = validateStatusPort.get(API_PAYMENT_PROCESSOR_STATUS) == "slow"
+        val timeoutStatusFallback = validateStatusPort.get(API_PAYMENT_PROCESSOR_FALLBACK_STATUS) == "slow"
+
+        return when {
+            defaultStatus && !timeoutStatus -> TypePayment.DEFAULT
+            fallbackStatus && !timeoutStatusFallback -> TypePayment.FALLBACK
+            timeoutStatusFallback -> null
+            else -> null
+        }.also { type ->
+            log.debug("Can process payment with type: {}", type)
         }
     }
 

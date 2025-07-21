@@ -21,9 +21,10 @@ class PaymentReposityRedis(
             correlationId = payment.correlationId.toString(),
             amount = payment.amount.toString(),
             requestedAt = payment.requestedAt.toString(),
-            type = payment.type.name
+            type = payment.type.name,
+            status = status.name
         )
-        val key = payment.correlationId.toString() + "#" + status.name
+        val key = payment.correlationId.toString()
         redisTemplate.opsForValue().set(key, paymentProcessorRedis)
         // Adiciona ao Sorted Set
         if (status == StatusPayment.SUCCESS) {
@@ -33,14 +34,38 @@ class PaymentReposityRedis(
         log.info("Saved payment [${status}] with correlation ID: ${payment.correlationId}, type: ${payment.type}, requested at: ${payment.requestedAt}")
     }
 
-    override fun delete(correlationId: UUID, status: StatusPayment) {
-        val keyPrefix = "$correlationId#"
-        val keys = redisTemplate.keys("$keyPrefix*")
-        if (keys != null && keys.isNotEmpty()) {
-            redisTemplate.delete(keys)
-            log.info("Deleted payment with correlation ID: $correlationId")
-        } else {
-            log.error("No payment found with correlation ID: $correlationId")
+    override fun getAndSet(
+        payment: Payment,
+        status: StatusPayment
+    ): Payment? {
+        val key = "${payment.correlationId}"
+        var paymentProcessorRedis: PaymentProcessorRedis? = PaymentProcessorRedis(
+            correlationId = payment.correlationId.toString(),
+            amount = payment.amount.toString(),
+            requestedAt = payment.requestedAt.toString(),
+            type = payment.type.name,
+            status = status.name
+        )
+        paymentProcessorRedis = redisTemplate.opsForValue().getAndSet(key, paymentProcessorRedis!!)
+        return paymentProcessorRedis?.let {
+            Payment(
+                correlationId = UUID.fromString(it.correlationId),
+                amount = it.amount.toBigDecimal(),
+                requestedAt = Instant.parse(it.requestedAt),
+                type = TypePayment.valueOf(it.type)
+            )
+        }.also { payment ->
+            if (payment != null) {
+                log.info("Updated payment with correlation ID: ${payment.correlationId}, status: $status")
+            }
+            null
+        }
+
+    }
+
+    override fun delete(correlationId: UUID) {
+        redisTemplate.delete("$correlationId").also {
+            log.info("Deleted payment with correlation ID: $correlationId, exists: $it")
         }
     }
 
@@ -57,31 +82,10 @@ class PaymentReposityRedis(
             }!!
     }
 
-    override fun checkExists(correlationId: UUID, status: StatusPayment?): Boolean {
-        val exists = if (status != null) {
-            redisTemplate.hasKey("$correlationId#${status.name}").also {
-                log.info("Payment with correlation ID: $correlationId and status: $status exists: $it")
-            }
-        } else {
-            redisTemplate.keys("${correlationId}#*").isNotEmpty().also {
-                log.info("Payment with correlation ID prefix: $correlationId exists: $it")
-            }
+    override fun checkExists(correlationId: UUID): Boolean {
+        return redisTemplate.hasKey("$correlationId").also {
+            log.info("Payment with correlation ID: $correlationId exists: $it")
         }
-        return exists
-    }
-
-    override fun getPaymentsByStatus(status: StatusPayment): List<Payment> {
-        return redisTemplate.keys("*#${status.name}")
-            .mapNotNull { key ->
-                redisTemplate.opsForValue().get(key)
-            }.map { paymentProcessorRedis ->
-                Payment(
-                    correlationId = UUID.fromString(paymentProcessorRedis.correlationId),
-                    amount = paymentProcessorRedis.amount.toBigDecimal(),
-                    requestedAt = Instant.parse(paymentProcessorRedis.requestedAt),
-                    type = TypePayment.valueOf(paymentProcessorRedis.type)
-                )
-            }
     }
 
     companion object {
