@@ -25,5 +25,5 @@ echo "Waiting for the services to be ready..."
 sleep 15
 
 echo "Running k6 tests..."
-# k6 run -e MAX_REQUESTS=100 rinha-test/rinha.js
+#k6 run -e MAX_REQUESTS=100 rinha-test/rinha.js
 k6 run rinha-test/rinha.js

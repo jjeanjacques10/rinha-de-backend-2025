@@ -16,7 +16,7 @@ class PaymentController(
     suspend fun processPayment(
         @RequestBody request: Payment
     ): PaymentResponse {
-        log.info("Received payment request with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
+        log.debug("Received payment request with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
 
         paymentService.validatePaymentProcessed(request)
 
@@ -38,7 +38,7 @@ class PaymentController(
 
     companion object {
         private val SUCCESS_STATUS = "success"
-        private const val ERROR_STATUS = "error"
+
         private val log = LoggerFactory.getLogger(this::class.java)
     }
 

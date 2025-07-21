@@ -28,7 +28,7 @@ class PaymentService(
         paymentProducerPort.send(payment, StatusPayment.PENDING)
     }
 
-    suspend fun processPayment(payment: Payment): StatusPayment {
+    suspend fun processPayment(payment: Payment) {
         log.info("Requesting payment with correlation ID: ${payment.correlationId}, amount: ${payment.amount}, requested at: ${payment.requestedAt}")
 
         var statusPayment: StatusPayment
@@ -37,7 +37,7 @@ class PaymentService(
 
         if (checkPaymentProcessing(payment)) {
             log.info("Payment with correlation ID: ${payment.correlationId} is already being processed.")
-            return StatusPayment.PROCESSING
+            return
         }
 
         if (paymentType != null) {
@@ -53,8 +53,6 @@ class PaymentService(
         if (statusPayment != StatusPayment.SUCCESS) {
             paymentProducerPort.send(payment, statusPayment)
         }
-
-        return statusPayment
     }
 
     private suspend fun getStatusProcess(
@@ -67,7 +65,7 @@ class PaymentService(
         log.info("Payment with correlation ID: ${payment.correlationId} already processed, skipping.")
         StatusPayment.SUCCESS
     } catch (_: TimeoutRuntimeException) {
-        log.info("Payment processor timed out for correlation ID: ${payment.correlationId}, falling back to fallback processor.")
+        log.warn("Payment processor timed out for correlation ID: ${payment.correlationId}, falling back to fallback processor.")
         StatusPayment.TIMEOUT
     } catch (_: Exception) {
         log.error("Payment processor failed for correlation ID: ${payment.correlationId}, falling back to fallback processor.")
@@ -81,6 +79,8 @@ class PaymentService(
             validatePaymentProcessed(payment, StatusPayment.SUCCESS)
 
             processPayment(payment)
+        } catch (ex: AlreadyProcessedRuntimeException) {
+            log.debug("Payment with correlation ID: ${payment.correlationId} has already been processed, skipping.", ex)
         } catch (ex: Exception) {
             throw ex.also {
                 log.error("Failed to process pending payment with correlation ID: ${payment.correlationId}", it)

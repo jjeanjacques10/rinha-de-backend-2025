@@ -38,7 +38,7 @@ class ValidateService(
         if (status == null) return
         when {
             status.failing -> validateStatusPort.save(key, "failing")
-            status.minResponseTime >= 800 -> validateStatusPort.save(key, "slow")
+            status.minResponseTime >= 1000 -> validateStatusPort.save(key, "slow")
             else -> validateStatusPort.save(key, "ok")
         }
     }
@@ -53,7 +53,6 @@ class ValidateService(
         return when {
             defaultStatus && !timeoutStatus -> TypePayment.DEFAULT
             fallbackStatus && !timeoutStatusFallback -> TypePayment.FALLBACK
-            timeoutStatusFallback -> null
             else -> null
         }.also { type ->
             log.debug("Can process payment with type: {}", type)

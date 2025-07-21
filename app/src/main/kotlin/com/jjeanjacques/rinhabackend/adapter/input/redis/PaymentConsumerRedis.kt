@@ -34,7 +34,6 @@ class PaymentConsumerRedis(
             kotlinx.coroutines.GlobalScope.launch {
                 when (status) {
                     StatusPayment.TIMEOUT -> {
-                        delay(1000)
                         paymentService.processTimeoutPayments(payment)
                     }
 
