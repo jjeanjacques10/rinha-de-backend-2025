@@ -11,7 +11,6 @@ import com.jjeanjacques.rinhabackend.domain.models.Payment
 import com.jjeanjacques.rinhabackend.domain.utils.toString
 import io.netty.handler.codec.http.HttpResponseStatus
 import org.slf4j.LoggerFactory
-import org.springframework.http.HttpStatusCode
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.time.format.DateTimeFormatter
@@ -23,16 +22,16 @@ class PaymentProcessorService(
     private val paymentProcessorClient: PaymentProcessorClient,
     private val paymentProcessorFallbackClient: PaymentProcessorClient
 ) {
-    suspend fun callPaymentProcessor(payment: Payment, paymentType: TypePayment) {
+    suspend fun callPaymentProcessor(payment: Payment) {
         try {
-            when (paymentType) {
+            when (payment.type) {
                 TypePayment.DEFAULT -> requestPaymentDefault(payment)
                 TypePayment.FALLBACK -> {
                     payment.type = TypePayment.FALLBACK
                     requestFallBackPayment(payment)
                 }
 
-                TypePayment.TIMEOUT -> throw IllegalArgumentException("Unsupported payment type: $paymentType")
+                TypePayment.TIMEOUT -> throw IllegalArgumentException("Unsupported payment type: ${payment.type}")
 
             }
         } catch (ex: WebClientResponseException) {
@@ -43,14 +42,14 @@ class PaymentProcessorService(
             if (ex.statusCode == HttpResponseStatus.REQUEST_TIMEOUT) {
                 throw TimeoutRuntimeException("Payment request timed out for correlation ID ${payment.correlationId}.")
             }
-            if (paymentType == TypePayment.DEFAULT) {
+            if (payment.type == TypePayment.DEFAULT) {
                 payment.type = TypePayment.FALLBACK
                 requestFallBackPayment(payment)
             }
         } catch (ex: Exception) {
             log.error("Error calling payment processor: ${ex.message}", ex)
-            payment.type = TypePayment.FALLBACK
-            if (paymentType == TypePayment.DEFAULT) {
+            if (payment.type == TypePayment.DEFAULT) {
+                payment.type = TypePayment.FALLBACK
                 requestFallBackPayment(payment)
             }
         }

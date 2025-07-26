@@ -47,6 +47,7 @@ class PaymentProcessorClient(
                 .bodyToMono(Payment::class.java)
                 .awaitSingle()
         } catch (ex: Exception) {
+            log.error("Error requesting payment by ID: ${ex.message}")
             webClientFallback.get()
                 .uri("/payments/$paymentId")
                 .retrieve()

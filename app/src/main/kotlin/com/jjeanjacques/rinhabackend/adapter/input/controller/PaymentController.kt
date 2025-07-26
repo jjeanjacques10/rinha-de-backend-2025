@@ -4,6 +4,9 @@ import com.jjeanjacques.rinhabackend.adapter.input.controller.response.PaymentRe
 import com.jjeanjacques.rinhabackend.domain.models.Payment
 import com.jjeanjacques.rinhabackend.domain.models.PaymentSummary
 import com.jjeanjacques.rinhabackend.domain.service.PaymentService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
 
@@ -16,13 +19,14 @@ class PaymentController(
     suspend fun processPayment(
         @RequestBody request: Payment
     ): PaymentResponse {
-        log.debug("Received payment request with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
-
-        paymentService.sendToProcessor(request)
+        CoroutineScope(Dispatchers.Default).launch {
+            log.debug("Received payment request with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
+            paymentService.sendToProcessor(request)
+        }
 
         return PaymentResponse(
             status = "success",
-            message = "Payment processed successfully"
+            message = "Payment received and will be processed asynchronously"
         )
     }
 

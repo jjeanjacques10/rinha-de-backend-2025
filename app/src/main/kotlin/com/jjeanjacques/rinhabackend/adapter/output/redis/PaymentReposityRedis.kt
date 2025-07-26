@@ -20,8 +20,8 @@ class PaymentReposityRedis(
         val paymentProcessorRedis = PaymentProcessorRedis(
             correlationId = payment.correlationId.toString(),
             amount = payment.amount.toString(),
-            requestedAt = payment.requestedAt.toString(),
             type = payment.type.name,
+            requestedAt = payment.requestedAt.toString(),
             status = status.name
         )
         val key = payment.correlationId.toString()
@@ -31,7 +31,7 @@ class PaymentReposityRedis(
             redisTemplate.opsForZSet()
                 .add(paymentsByDateKey, paymentProcessorRedis, payment.requestedAt?.epochSecond!!.toDouble())
         }
-        log.info("Saved payment [${status}] with correlation ID: ${payment.correlationId}, type: ${payment.type}, requested at: ${payment.requestedAt}")
+        log.info("Saved payment [${status}] with correlation ID: ${payment.correlationId}, requested at: ${payment.requestedAt}")
     }
 
     override fun getAndSet(
@@ -44,7 +44,8 @@ class PaymentReposityRedis(
             amount = payment.amount.toString(),
             requestedAt = payment.requestedAt.toString(),
             type = payment.type.name,
-            status = status.name
+            status = status.name,
+            workerId = payment.workerId
         )
         paymentProcessorRedis = redisTemplate.opsForValue().getAndSet(key, paymentProcessorRedis!!)
         return paymentProcessorRedis?.let {
@@ -53,6 +54,7 @@ class PaymentReposityRedis(
                 amount = it.amount.toBigDecimal(),
                 requestedAt = Instant.parse(it.requestedAt),
                 type = TypePayment.valueOf(it.type),
+                status = StatusPayment.valueOf(it.status),
                 workerId = it.workerId
             )
         }.also { payment ->
@@ -79,6 +81,7 @@ class PaymentReposityRedis(
                     amount = paymentProcessorRedis.amount.toBigDecimal(),
                     requestedAt = Instant.parse(paymentProcessorRedis.requestedAt),
                     type = TypePayment.valueOf(paymentProcessorRedis.type),
+                    status = StatusPayment.valueOf(paymentProcessorRedis.status),
                     workerId = paymentProcessorRedis.workerId
                 )
             }!!

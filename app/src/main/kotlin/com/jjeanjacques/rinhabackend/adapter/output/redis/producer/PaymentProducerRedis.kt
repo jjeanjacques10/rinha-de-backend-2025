@@ -20,9 +20,8 @@ class PaymentProducerRedis(
             correlationId = payment.correlationId.toString(),
             amount = payment.amount.toString(),
             requestedAt = payment.requestedAt.toString(),
-            type = payment.type.name,
             status = statusPayment.name,
-            workerId = payment.workerId!!
+            workerId = payment.workerId
         )
         redisTemplate.convertAndSend(topic.topic, paymentProcessorRedis)
         log.info("Sent payment to Redis topic: ${topic.topic}, payment: $paymentProcessorRedis")

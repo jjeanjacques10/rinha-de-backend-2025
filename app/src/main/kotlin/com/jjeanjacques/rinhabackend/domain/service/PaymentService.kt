@@ -21,7 +21,6 @@ class PaymentService(
     private val paymentProcessorService: PaymentProcessorService,
     private val paymentProducerPort: PaymentProducerPort,
     private val paymentRepository: PaymentRepository,
-    private val validateService: ValidateService,
     @Value("\${worker.id}")
     private val workerId: String
 ) {
@@ -32,22 +31,15 @@ class PaymentService(
         paymentProducerPort.send(payment, StatusPayment.PENDING)
     }
 
-    suspend fun processPayment(payment: Payment, paymentType: TypePayment? = null) {
+    suspend fun processPayment(payment: Payment) {
         log.info("Requesting payment with correlation ID: ${payment.correlationId}, amount: ${payment.amount}, requested at: ${payment.requestedAt}")
-
-        var statusPayment: StatusPayment
 
         if (checkPaymentProcessing(payment)) {
             log.info("Payment with correlation ID: ${payment.correlationId} is already being processed.")
             return
         }
 
-        if (paymentType != null) {
-            statusPayment = getStatusProcess(payment, paymentType)
-        } else {
-            log.warn("Payment processor is not available for correlation ID: ${payment.correlationId}")
-            statusPayment = StatusPayment.PENDING
-        }
+        val statusPayment = getStatusProcess(payment)
 
         log.info("Payment status for correlation ID: ${payment.correlationId} is $statusPayment")
         paymentRepository.save(payment, statusPayment)
@@ -57,11 +49,8 @@ class PaymentService(
         }
     }
 
-    private suspend fun getStatusProcess(
-        payment: Payment,
-        paymentType: TypePayment
-    ) = try {
-        paymentProcessorService.callPaymentProcessor(payment, paymentType)
+    private suspend fun getStatusProcess(payment: Payment) = try {
+        paymentProcessorService.callPaymentProcessor(payment)
         StatusPayment.SUCCESS
     } catch (_: AlreadyProcessedRuntimeException) {
         log.info("Payment with correlation ID: ${payment.correlationId} already processed, skipping.")
@@ -95,7 +84,7 @@ class PaymentService(
             val response = paymentProcessorService.requestPaymentById(payment.correlationId)
 
             if (response == null) {
-                processPayment(payment, paymentType)
+                processPayment(payment)
                 return
             }
             paymentRepository.delete(payment.correlationId)
@@ -124,6 +113,7 @@ class PaymentService(
         val toInstant = Instant.parse(if (to.endsWith("Z")) to else "${to}Z")
 
         val payments = paymentRepository.findByDateRange(fromInstant, toInstant)
+            .filter { it.status == StatusPayment.SUCCESS }
 
         val paymentsDefault = payments.filter { it.type == TypePayment.DEFAULT }
         val paymentsFallback = payments.filter { it.type == TypePayment.FALLBACK }

@@ -7,6 +7,7 @@ import com.jjeanjacques.rinhabackend.domain.port.output.ValidateStatusPort
 import com.jjeanjacques.rinhabackend.domain.port.output.ValidateStatusPort.Companion.API_PAYMENT_PROCESSOR_FALLBACK_STATUS
 import com.jjeanjacques.rinhabackend.domain.port.output.ValidateStatusPort.Companion.API_PAYMENT_PROCESSOR_STATUS
 import org.springframework.stereotype.Service
+import kotlin.text.get
 
 @Service
 class ValidateService(
@@ -44,10 +45,10 @@ class ValidateService(
     }
 
     fun canProcessPayment(): TypePayment? {
-        val defaultStatus = validateStatusPort.get(API_PAYMENT_PROCESSOR_STATUS) == "ok"
+        val defaultStatus = (validateStatusPort.get(API_PAYMENT_PROCESSOR_STATUS) ?: "ok") == "ok"
         val fallbackStatus = validateStatusPort.get(API_PAYMENT_PROCESSOR_FALLBACK_STATUS) == "ok"
 
-        val timeoutStatus = validateStatusPort.get(API_PAYMENT_PROCESSOR_STATUS) == "slow"
+        val timeoutStatus = (validateStatusPort.get(API_PAYMENT_PROCESSOR_STATUS) ?: "ok") == "slow"
         val timeoutStatusFallback = validateStatusPort.get(API_PAYMENT_PROCESSOR_FALLBACK_STATUS) == "slow"
 
         return when {
