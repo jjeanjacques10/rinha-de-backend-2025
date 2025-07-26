@@ -18,13 +18,11 @@ class PaymentController(
     ): PaymentResponse {
         log.debug("Received payment request with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
 
-        paymentService.validatePaymentProcessed(request)
-
         paymentService.sendToProcessor(request)
 
         return PaymentResponse(
-            status = SUCCESS_STATUS,
-            message = "Payment of ${request.amount} processed successfully with correlation ID ${request.correlationId}"
+            status = "success",
+            message = "Payment processed successfully"
         )
     }
 
@@ -37,8 +35,6 @@ class PaymentController(
     }
 
     companion object {
-        private val SUCCESS_STATUS = "success"
-
         private val log = LoggerFactory.getLogger(this::class.java)
     }
 

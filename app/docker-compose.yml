@@ -16,11 +16,13 @@ services:
     hostname: api1
     environment:
       - APP_PORT=8080
+      - WORKER_ID=1
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
       - REDIS_HOST=redis-rinha
       - DB_HOST=payment-processor-default-db
       - DB_PORT=5432
+      - LOG_LEVEL=ERROR
 
   api2:
     <<: *api-processor
@@ -28,11 +30,13 @@ services:
     hostname: api2
     environment:
       - APP_PORT=8080
+      - WORKER_ID=2
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
       - REDIS_HOST=redis-rinha
       - DB_HOST=payment-processor-default-db
       - DB_PORT=5432
+      - LOG_LEVEL=ERROR
 
   nginx:
     image: nginx:latest

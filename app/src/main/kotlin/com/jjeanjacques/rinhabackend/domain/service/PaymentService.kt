@@ -12,6 +12,7 @@ import com.jjeanjacques.rinhabackend.domain.models.PaymentSummary
 import com.jjeanjacques.rinhabackend.domain.port.output.PaymentProducerPort
 import com.jjeanjacques.rinhabackend.domain.port.output.PaymentRepository
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Instant
 
@@ -20,20 +21,21 @@ class PaymentService(
     private val paymentProcessorService: PaymentProcessorService,
     private val paymentProducerPort: PaymentProducerPort,
     private val paymentRepository: PaymentRepository,
-    private val validateService: ValidateService
+    private val validateService: ValidateService,
+    @Value("\${worker.id}")
+    private val workerId: String
 ) {
 
     suspend fun sendToProcessor(payment: Payment) {
-        log.info("Sending payment with correlation ID: ${payment.correlationId} to processor.")
+        log.debug("Sending payment with correlation ID: ${payment.correlationId} to processor.")
+        payment.workerId = workerId
         paymentProducerPort.send(payment, StatusPayment.PENDING)
     }
 
-    suspend fun processPayment(payment: Payment) {
+    suspend fun processPayment(payment: Payment, paymentType: TypePayment? = null) {
         log.info("Requesting payment with correlation ID: ${payment.correlationId}, amount: ${payment.amount}, requested at: ${payment.requestedAt}")
 
         var statusPayment: StatusPayment
-
-        val paymentType = validateService.canProcessPayment()
 
         if (checkPaymentProcessing(payment)) {
             log.info("Payment with correlation ID: ${payment.correlationId} is already being processed.")
@@ -72,12 +74,10 @@ class PaymentService(
         StatusPayment.PENDING
     }
 
-    suspend fun processPendingPayments(payment: Payment) {
+    suspend fun processPendingPayments(payment: Payment, paymentType: TypePayment) {
         try {
             log.info("Processing pending payment with correlation ID: ${payment.correlationId}")
-
-            validatePaymentProcessed(payment, StatusPayment.SUCCESS)
-
+            validatePaymentProcessed(payment)
             processPayment(payment)
         } catch (ex: AlreadyProcessedRuntimeException) {
             log.debug("Payment with correlation ID: ${payment.correlationId} has already been processed, skipping.", ex)
@@ -88,14 +88,14 @@ class PaymentService(
         }
     }
 
-    suspend fun processTimeoutPayments(payment: Payment) {
+    suspend fun processTimeoutPayments(payment: Payment, paymentType: TypePayment) {
         try {
             log.info("Processing timeout payment with correlation ID: ${payment.correlationId}")
 
             val response = paymentProcessorService.requestPaymentById(payment.correlationId)
 
             if (response == null) {
-                processPayment(payment)
+                processPayment(payment, paymentType)
                 return
             }
             paymentRepository.delete(payment.correlationId)
@@ -110,7 +110,7 @@ class PaymentService(
     }
 
 
-    fun validatePaymentProcessed(payment: Payment, status: StatusPayment? = null) {
+    fun validatePaymentProcessed(payment: Payment) {
         if (paymentRepository.checkExists(payment.correlationId)) {
             log.info("Payment with correlation ID: ${payment.correlationId} already processed.")
             throw AlreadyProcessedRuntimeException(

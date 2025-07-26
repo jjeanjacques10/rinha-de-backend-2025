@@ -3,9 +3,9 @@ package com.jjeanjacques.rinhabackend.infra
 import com.jjeanjacques.rinhabackend.adapter.input.redis.PaymentConsumerRedis
 import com.jjeanjacques.rinhabackend.adapter.output.redis.entity.PaymentProcessorRedis
 import com.jjeanjacques.rinhabackend.domain.port.output.PaymentProducerPort
-import com.jjeanjacques.rinhabackend.domain.port.output.ValidateStatusPort
 import com.jjeanjacques.rinhabackend.domain.service.PaymentService
 import com.jjeanjacques.rinhabackend.domain.service.ValidateService
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.connection.RedisConnectionFactory
@@ -38,9 +38,18 @@ class RedisConfig {
     fun messageListener(
         validateService: ValidateService,
         paymentService: PaymentService,
-        paymentProducerPort: PaymentProducerPort
+        paymentProducerPort: PaymentProducerPort,
+        @Value("\${worker.id}")
+        workerId: String
     ): MessageListenerAdapter {
-        return MessageListenerAdapter(PaymentConsumerRedis(validateService, paymentService, paymentProducerPort))
+        return MessageListenerAdapter(
+            PaymentConsumerRedis(
+                validateService,
+                paymentService,
+                paymentProducerPort,
+                workerId
+            )
+        )
     }
 
     @Bean

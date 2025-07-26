@@ -10,5 +10,6 @@ data class PaymentProcessorRedis @JsonCreator constructor(
     @JsonProperty("amount") val amount: String = "",
     @JsonProperty("requestedAt") val requestedAt: String = "",
     @JsonProperty("type") val type: String = "",
-    @JsonProperty("status") val status: String = ""
+    @JsonProperty("status") val status: String = "",
+    @JsonProperty("workerId") val workerId: String = ""
 )

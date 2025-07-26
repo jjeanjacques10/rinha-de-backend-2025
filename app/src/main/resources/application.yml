@@ -1,9 +1,12 @@
 server:
   port: ${APP_PORT:9999}
 
+worker:
+  id: ${WORKER_ID:1}
+
 spring:
   application:
-    name: rinhabackend
+    name: rinhabackend-${WORKER_ID:1}
   main:
     banner-mode: off
   data:
@@ -44,4 +47,4 @@ apis:
 
 logging:
   level:
-    root: ${LOG_LEVEL:ERROR}
+    root: ${LOG_LEVEL:INFO}

@@ -9,5 +9,6 @@ data class Payment(
     val correlationId: UUID,
     val amount: BigDecimal,
     var requestedAt: Instant? = Instant.now(),
-    var type: TypePayment = TypePayment.DEFAULT
+    var type: TypePayment = TypePayment.DEFAULT,
+    var workerId: String? = null
 )

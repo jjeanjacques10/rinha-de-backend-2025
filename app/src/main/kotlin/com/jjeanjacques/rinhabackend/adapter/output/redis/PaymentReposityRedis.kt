@@ -52,7 +52,8 @@ class PaymentReposityRedis(
                 correlationId = UUID.fromString(it.correlationId),
                 amount = it.amount.toBigDecimal(),
                 requestedAt = Instant.parse(it.requestedAt),
-                type = TypePayment.valueOf(it.type)
+                type = TypePayment.valueOf(it.type),
+                workerId = it.workerId
             )
         }.also { payment ->
             if (payment != null) {
@@ -77,7 +78,8 @@ class PaymentReposityRedis(
                     correlationId = UUID.fromString(paymentProcessorRedis.correlationId),
                     amount = paymentProcessorRedis.amount.toBigDecimal(),
                     requestedAt = Instant.parse(paymentProcessorRedis.requestedAt),
-                    type = TypePayment.valueOf(paymentProcessorRedis.type)
+                    type = TypePayment.valueOf(paymentProcessorRedis.type),
+                    workerId = paymentProcessorRedis.workerId
                 )
             }!!
     }
