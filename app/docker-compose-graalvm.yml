@@ -1,6 +1,6 @@
 x-service-templates:
   api1: &api-processor
-    image: docker.io/jjeanjacques10/rinhabackend2025:graalvm
+    image: jjeanjacques/rinhabackend2025:graalvm
     networks:
       - payment-processor
     restart: on-failure
