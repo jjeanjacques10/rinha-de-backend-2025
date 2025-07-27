@@ -24,6 +24,11 @@ import org.springframework.data.redis.serializer.StringRedisSerializer
 class RedisConfig {
 
     @Bean
+    fun topic(): ChannelTopic {
+        return ChannelTopic("paymentQueue")
+    }
+
+    @Bean
     fun redisTemplate(factory: RedisConnectionFactory): RedisTemplate<String, PaymentProcessorRedis> {
         val template = RedisTemplate<String, PaymentProcessorRedis>()
         val serializer = Jackson2JsonRedisSerializer(PaymentProcessorRedis::class.java)
@@ -43,10 +48,6 @@ class RedisConfig {
         return ReactiveRedisTemplate<String?, PaymentProcessorRedis?>(factory, context)
     }
 
-    @Bean
-    fun topic(): ChannelTopic {
-        return ChannelTopic("paymentQueue")
-    }
 
     @Bean
     fun messageListener(

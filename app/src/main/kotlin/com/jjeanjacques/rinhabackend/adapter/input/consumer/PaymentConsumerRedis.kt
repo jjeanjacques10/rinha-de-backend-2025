@@ -30,8 +30,15 @@ class PaymentConsumerRedis(
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onMessage(message: Message, pattern: ByteArray?) {
+        val messageBody = message.body.decodeToString()
+        if (messageBody.isBlank()) {
+            log.warn("Received an empty or blank message. Ignoring.")
+            return
+        }
+        log.info("Received message: $messageBody")
         CoroutineScope(Dispatchers.IO).launch {
             val payment = message.toPayment()
+
 
             if (payment.workerId != workerId) {
                 log.warn("Received payment with worker ID: ${payment.workerId}, but current worker ID is: $workerId. Ignoring message.")
