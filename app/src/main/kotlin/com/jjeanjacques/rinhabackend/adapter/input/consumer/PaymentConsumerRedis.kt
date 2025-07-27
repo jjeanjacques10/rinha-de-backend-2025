@@ -52,8 +52,7 @@ class PaymentConsumerRedis(
 
     private fun Message.toPayment() =
         Payment(
-            correlationId = this.body.decodeToString().let { extractJsonField(it, "correlationId") }
-                .let { UUID.fromString(it) },
+            correlationId = this.body.decodeToString().let { extractJsonField(it, "correlationId") },
             amount = this.body.decodeToString().let { extractJsonField(it, "amount") }
                 .let { BigDecimal.valueOf(it.toDouble()) },
             requestedAt = this.body.decodeToString().let { extractJsonField(it, "requestedAt") }

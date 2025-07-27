@@ -7,7 +7,7 @@ import java.time.Instant
 import java.util.UUID
 
 data class Payment(
-    val correlationId: UUID,
+    val correlationId: String,
     val amount: BigDecimal,
     var requestedAt: Instant? = Instant.now(),
     var type: TypePayment = TypePayment.DEFAULT,

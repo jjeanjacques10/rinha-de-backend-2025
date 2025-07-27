@@ -35,9 +35,6 @@ class PaymentReposityRedis(
             .add(KEY_PAYMENT_BY_DATE, paymentProcessorRedis, payment.requestedAt?.toEpochMilli()!!.toDouble())
             .awaitSingle()
 
-//        val key = payment.correlationId.toString()
-//        redisTemplate.opsForValue().set(key, paymentProcessorRedis)
-
         log.info("Saved payment [${status}] with correlation ID: ${payment.correlationId}, requested at: ${payment.requestedAt}")
     }
 
@@ -57,7 +54,7 @@ class PaymentReposityRedis(
         paymentProcessorRedis = redisTemplate.opsForValue().getAndSet(key, paymentProcessorRedis!!).awaitSingleOrNull()
         return paymentProcessorRedis?.let {
             Payment(
-                correlationId = UUID.fromString(it.correlationId),
+                correlationId = it.correlationId,
                 amount = it.amount.toBigDecimal(),
                 requestedAt = Instant.parse(it.requestedAt),
                 type = TypePayment.valueOf(it.type),
@@ -90,7 +87,7 @@ class PaymentReposityRedis(
             .awaitFirstOrNull()
             ?.mapNotNull { paymentProcessorRedis ->
                 Payment(
-                    correlationId = UUID.fromString(paymentProcessorRedis.correlationId),
+                    correlationId = paymentProcessorRedis.correlationId,
                     amount = paymentProcessorRedis.amount.toBigDecimal(),
                     requestedAt = Instant.parse(paymentProcessorRedis.requestedAt),
                     type = TypePayment.valueOf(paymentProcessorRedis.type),
