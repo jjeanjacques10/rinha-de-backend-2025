@@ -20,9 +20,10 @@ class ValidateService(
         val lastStatus = validateStatusPort.get(API_PAYMENT_PROCESSOR_STATUS)
 
         if (lastStatus != null) {
-            log.info("Payment processor status is already validated as ok.")
+            log.info("Payment processor status is already validated as ${lastStatus}.")
             return
-        } else log.info("Validating payment processor status...")
+        } else log.debug("Validating payment processor status...")
+        validateStatusPort.save(API_PAYMENT_PROCESSOR_STATUS, "updating")
 
         val status = paymentProcessorService.requestPaymentProcessorStatus(TypePayment.DEFAULT)
         val statusFallback = paymentProcessorService.requestPaymentProcessorStatus(TypePayment.FALLBACK)
@@ -37,23 +38,25 @@ class ValidateService(
 
     private fun saveStatus(status: PaymentProcessorStatusResponse?, key: String) {
         if (status == null) return
+        validateStatusPort.save(key, status.minResponseTime.toString())
         when {
             status.failing -> validateStatusPort.save(key, "failing")
-            status.minResponseTime >= 1000 -> validateStatusPort.save(key, "slow")
             else -> validateStatusPort.save(key, "ok")
         }
     }
 
     fun canProcessPayment(): TypePayment? {
         val defaultStatus = (validateStatusPort.get(API_PAYMENT_PROCESSOR_STATUS) ?: "ok") == "ok"
-        val fallbackStatus = validateStatusPort.get(API_PAYMENT_PROCESSOR_FALLBACK_STATUS) == "ok"
+        val fallbackStatus = (validateStatusPort.get(API_PAYMENT_PROCESSOR_FALLBACK_STATUS) ?: "ok") == "ok"
 
-        val timeoutStatus = (validateStatusPort.get(API_PAYMENT_PROCESSOR_STATUS) ?: "ok") == "slow"
-        val timeoutStatusFallback = validateStatusPort.get(API_PAYMENT_PROCESSOR_FALLBACK_STATUS) == "slow"
+        val timeoutStatus = (validateStatusPort.get(API_PAYMENT_PROCESSOR_STATUS)?.toIntOrNull() ?: 0)
+        val timeoutStatusFallback = (validateStatusPort.get(API_PAYMENT_PROCESSOR_FALLBACK_STATUS)?.toIntOrNull() ?: 0)
 
         return when {
-            defaultStatus && !timeoutStatus -> TypePayment.DEFAULT
-            fallbackStatus && !timeoutStatusFallback -> TypePayment.FALLBACK
+            defaultStatus && timeoutStatus <= 500 -> TypePayment.DEFAULT
+            fallbackStatus && timeoutStatusFallback <= 1000 -> TypePayment.FALLBACK
+            defaultStatus && timeoutStatus <= 2000 -> null
+            fallbackStatus && timeoutStatusFallback > 1000 -> TypePayment.TIMEOUT
             else -> null
         }.also { type ->
             log.debug("Can process payment with type: {}", type)

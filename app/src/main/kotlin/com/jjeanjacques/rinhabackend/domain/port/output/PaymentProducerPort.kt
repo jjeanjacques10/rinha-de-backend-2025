@@ -4,5 +4,5 @@ import com.jjeanjacques.rinhabackend.domain.enums.StatusPayment
 import com.jjeanjacques.rinhabackend.domain.models.Payment
 
 interface PaymentProducerPort {
-    fun send(payment: Payment, statusPayment: StatusPayment)
+    suspend fun send(payment: Payment, statusPayment: StatusPayment)
 }

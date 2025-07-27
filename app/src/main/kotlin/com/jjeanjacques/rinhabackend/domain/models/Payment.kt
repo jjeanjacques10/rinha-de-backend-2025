@@ -12,5 +12,5 @@ data class Payment(
     var requestedAt: Instant? = Instant.now(),
     var type: TypePayment = TypePayment.DEFAULT,
     var workerId: String = "",
-    val status: StatusPayment = StatusPayment.PENDING
+    var status: StatusPayment = StatusPayment.PENDING
 )

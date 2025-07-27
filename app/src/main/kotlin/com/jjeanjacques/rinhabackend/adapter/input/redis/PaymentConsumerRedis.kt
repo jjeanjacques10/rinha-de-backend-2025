@@ -1,6 +1,7 @@
 package com.jjeanjacques.rinhabackend.adapter.input.redis
 
 import com.jjeanjacques.rinhabackend.domain.enums.StatusPayment
+import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import com.jjeanjacques.rinhabackend.domain.models.Payment
 import com.jjeanjacques.rinhabackend.domain.port.output.PaymentProducerPort
 import com.jjeanjacques.rinhabackend.domain.service.PaymentService
@@ -40,20 +41,18 @@ class PaymentConsumerRedis(
         CoroutineScope(Dispatchers.Default).launch {
             val status = getPaymentStatus(message)
             val paymentType = validateService.canProcessPayment()
-            if (paymentType != null) {
-                log.debug("Processing payment asynchronously: ${payment.correlationId}, requested at: ${payment.requestedAt}")
-                payment.type = paymentType
-                when (status) {
-                    StatusPayment.TIMEOUT -> {
-                        paymentService.processTimeoutPayments(payment, paymentType)
-                    }
-
-                    else -> paymentService.processPendingPayments(payment, paymentType)
-                }
-
-            } else {
+            if (paymentType == null || paymentType == TypePayment.TIMEOUT) {
                 log.error("Payment processor is not available, cannot process payments asynchronously.")
                 paymentProducerPort.send(payment, status)
+                return@launch
+            }
+            log.info("Processing payment asynchronously: $payment with status: $status and type: $paymentType")
+            payment.type = paymentType
+            when (status) {
+                StatusPayment.TIMEOUT -> {
+                    paymentService.processTimeoutPayments(payment, paymentType)
+                }
+                else -> paymentService.processPendingPayments(payment, paymentType)
             }
         }
     }

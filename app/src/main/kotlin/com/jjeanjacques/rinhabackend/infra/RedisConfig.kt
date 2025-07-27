@@ -8,13 +8,17 @@ import com.jjeanjacques.rinhabackend.domain.service.ValidateService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory
 import org.springframework.data.redis.connection.RedisConnectionFactory
+import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.listener.ChannelTopic
 import org.springframework.data.redis.listener.RedisMessageListenerContainer
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer
+import org.springframework.data.redis.serializer.RedisSerializationContext
 import org.springframework.data.redis.serializer.StringRedisSerializer
+
 
 @Configuration
 class RedisConfig {
@@ -27,6 +31,16 @@ class RedisConfig {
         template.valueSerializer = serializer
         template.setConnectionFactory(factory)
         return template
+    }
+
+
+    @Bean
+    fun reactiveRedisTemplate(factory: ReactiveRedisConnectionFactory): ReactiveRedisTemplate<String?, PaymentProcessorRedis?> {
+        val serializer = Jackson2JsonRedisSerializer(PaymentProcessorRedis::class.java)
+        val builder =
+            RedisSerializationContext.newSerializationContext<String?, PaymentProcessorRedis?>(StringRedisSerializer())
+        val context = builder.value(serializer).build()
+        return ReactiveRedisTemplate<String?, PaymentProcessorRedis?>(factory, context)
     }
 
     @Bean

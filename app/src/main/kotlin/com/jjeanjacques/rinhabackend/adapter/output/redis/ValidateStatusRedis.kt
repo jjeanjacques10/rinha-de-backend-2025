@@ -11,7 +11,7 @@ class ValidateStatusRedis(
 ) : ValidateStatusPort {
 
     override fun save(key: String, status: String) {
-        redisTemplate.opsForValue().set(key, status, 5, java.util.concurrent.TimeUnit.SECONDS)
+        redisTemplate.opsForValue().set(key, status, 4950, java.util.concurrent.TimeUnit.MILLISECONDS)
     }
 
     override fun get(key: String): String? {

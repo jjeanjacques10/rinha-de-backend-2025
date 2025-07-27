@@ -25,16 +25,14 @@ class PaymentProcessorWebClient {
 
     @Bean
     fun paymentProcessorClient(): PaymentProcessorClient {
-        val webClient = WebClient.builder()
-            .baseUrl(baseUrl)
-            .defaultHeader("Content-Type", "application/json")
+        val webClient = WebClient.builder().baseUrl(baseUrl).defaultHeader("Content-Type", "application/json")
             .defaultHeader("Accept", "application/json")
-            .clientConnector(
-                org.springframework.http.client.reactive.ReactorClientHttpConnector(
-                    reactor.netty.http.client.HttpClient.create()
-                        .responseTimeout(java.time.Duration.ofMillis(timeout))
-                )
-            )
+//            .clientConnector(
+//                org.springframework.http.client.reactive.ReactorClientHttpConnector(
+//                    reactor.netty.http.client.HttpClient.create()
+//                        .responseTimeout(java.time.Duration.ofMillis(timeout))
+//                )
+//            )
             .build()
         val adapter = WebClientAdapter.create(webClient)
         val factory = HttpServiceProxyFactory.builderFor(adapter).build()
@@ -43,17 +41,13 @@ class PaymentProcessorWebClient {
 
     @Bean
     fun paymentProcessorFallbackClient(): PaymentProcessorClient {
-        val webClient = WebClient.builder()
-            .baseUrl(fallbackBaseUrl)
-            .defaultHeader("Content-Type", "application/json")
-            .defaultHeader("Accept", "application/json")
-            .clientConnector(
+        val webClient = WebClient.builder().baseUrl(fallbackBaseUrl).defaultHeader("Content-Type", "application/json")
+            .defaultHeader("Accept", "application/json").clientConnector(
                 org.springframework.http.client.reactive.ReactorClientHttpConnector(
                     reactor.netty.http.client.HttpClient.create()
                         .responseTimeout(java.time.Duration.ofMillis(fallbackTimeout))
                 )
-            )
-            .build()
+            ).build()
         val adapter = WebClientAdapter.create(webClient)
         val factory = HttpServiceProxyFactory.builderFor(adapter).build()
 
@@ -69,41 +63,24 @@ class PaymentProcessorWebClientConfig {
     private lateinit var baseUrl: String
 
     @Value("\${apis.payment-processor.default.timeout:250}")
-    private var timeout: Long = 250
+    private var timeout: Long = 5000
 
     @Value("\${apis.payment-processor.fallback.url}")
     private lateinit var fallbackBaseUrl: String
 
-    @Value("\${apis.payment-processor.fallback.timeout:500}")
-    private var fallbackTimeout: Long = 500
-
     @Bean(name = ["paymentProcessorWebClient"])
-    fun paymentProcessorWebClient(): WebClient {
-        return WebClient.builder()
-            .baseUrl(baseUrl)
-            .defaultHeader("Content-Type", "application/json")
-            .defaultHeader("Accept", "application/json")
-//            .clientConnector(
-//                org.springframework.http.client.reactive.ReactorClientHttpConnector(
-//                    reactor.netty.http.client.HttpClient.create()
-//                        .responseTimeout(java.time.Duration.ofMillis(timeout))
-//                )
-//            )
-            .build()
-    }
+    fun paymentProcessorWebClient(): WebClient = createWebClient(baseUrl)
 
     @Bean(name = ["paymentProcessorFallbackWebClient"])
-    fun paymentProcessorFallbackWebClient(): WebClient {
-        return WebClient.builder()
-            .baseUrl(fallbackBaseUrl)
+    fun paymentProcessorFallbackWebClient(): WebClient = createWebClient(fallbackBaseUrl)
+
+    private fun createWebClient(baseUrl: String): WebClient {
+        return WebClient.builder().baseUrl(baseUrl)
             .defaultHeader("Content-Type", "application/json")
-            .defaultHeader("Accept", "application/json")
-//            .clientConnector(
-//                org.springframework.http.client.reactive.ReactorClientHttpConnector(
-//                    reactor.netty.http.client.HttpClient.create()
-//                        .responseTimeout(java.time.Duration.ofMillis(fallbackTimeout))
-//                )
-//            )
-            .build()
+            .defaultHeader("Accept", "application/json").clientConnector(
+                org.springframework.http.client.reactive.ReactorClientHttpConnector(
+                    reactor.netty.http.client.HttpClient.create().responseTimeout(java.time.Duration.ofMillis(timeout))
+                )
+            ).build()
     }
 }

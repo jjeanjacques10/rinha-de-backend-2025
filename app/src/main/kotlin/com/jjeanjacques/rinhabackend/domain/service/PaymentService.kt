@@ -12,7 +12,6 @@ import com.jjeanjacques.rinhabackend.domain.models.PaymentSummary
 import com.jjeanjacques.rinhabackend.domain.port.output.PaymentProducerPort
 import com.jjeanjacques.rinhabackend.domain.port.output.PaymentRepository
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Instant
 
@@ -20,14 +19,11 @@ import java.time.Instant
 class PaymentService(
     private val paymentProcessorService: PaymentProcessorService,
     private val paymentProducerPort: PaymentProducerPort,
-    private val paymentRepository: PaymentRepository,
-    @Value("\${worker.id}")
-    private val workerId: String
+    private val paymentRepository: PaymentRepository
 ) {
 
     suspend fun sendToProcessor(payment: Payment) {
         log.debug("Sending payment with correlation ID: ${payment.correlationId} to processor.")
-        payment.workerId = workerId
         paymentProducerPort.send(payment, StatusPayment.PENDING)
     }
 
@@ -87,19 +83,23 @@ class PaymentService(
                 processPayment(payment)
                 return
             }
-            paymentRepository.delete(payment.correlationId)
             paymentRepository.save(payment, StatusPayment.SUCCESS)
+            for (status in StatusPayment.entries) {
+                if (status != StatusPayment.SUCCESS) {
+                    paymentRepository.delete(payment.correlationId)
+                }
+            }
         } catch (ex: Exception) {
             log.error("Failed to process timeout payment with correlation ID: ${payment.correlationId}", ex)
         }
     }
 
-    private fun checkPaymentProcessing(payment: Payment): Boolean {
+    private suspend fun checkPaymentProcessing(payment: Payment): Boolean {
         return paymentRepository.getAndSet(payment, StatusPayment.PROCESSING) != null
     }
 
 
-    fun validatePaymentProcessed(payment: Payment) {
+    suspend fun validatePaymentProcessed(payment: Payment) {
         if (paymentRepository.checkExists(payment.correlationId)) {
             log.info("Payment with correlation ID: ${payment.correlationId} already processed.")
             throw AlreadyProcessedRuntimeException(
@@ -108,12 +108,11 @@ class PaymentService(
         }
     }
 
-    fun getSummary(from: String, to: String): PaymentSummary? {
+    suspend fun getSummary(from: String, to: String): PaymentSummary? {
         val fromInstant = Instant.parse(if (from.endsWith("Z")) from else "${from}Z")
         val toInstant = Instant.parse(if (to.endsWith("Z")) to else "${to}Z")
 
         val payments = paymentRepository.findByDateRange(fromInstant, toInstant)
-            .filter { it.status == StatusPayment.SUCCESS }
 
         val paymentsDefault = payments.filter { it.type == TypePayment.DEFAULT }
         val paymentsFallback = payments.filter { it.type == TypePayment.FALLBACK }

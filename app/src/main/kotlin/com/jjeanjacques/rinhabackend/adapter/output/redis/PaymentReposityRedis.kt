@@ -5,18 +5,23 @@ import com.jjeanjacques.rinhabackend.domain.enums.StatusPayment
 import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import com.jjeanjacques.rinhabackend.domain.models.Payment
 import com.jjeanjacques.rinhabackend.domain.port.output.PaymentRepository
+import kotlinx.coroutines.reactive.awaitFirstOrDefault
+import kotlinx.coroutines.reactive.awaitFirstOrNull
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.slf4j.LoggerFactory
-import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.domain.Range
+import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.util.*
 
 @Repository
 class PaymentReposityRedis(
-    private val redisTemplate: RedisTemplate<String, PaymentProcessorRedis>
+    private val redisTemplate: ReactiveRedisTemplate<String, PaymentProcessorRedis>
 ) : PaymentRepository {
 
-    override fun save(payment: Payment, status: StatusPayment) {
+    override suspend fun save(payment: Payment, status: StatusPayment) {
         val paymentProcessorRedis = PaymentProcessorRedis(
             correlationId = payment.correlationId.toString(),
             amount = payment.amount.toString(),
@@ -25,16 +30,17 @@ class PaymentReposityRedis(
             status = status.name
         )
         val key = payment.correlationId.toString()
-        redisTemplate.opsForValue().set(key, paymentProcessorRedis)
-        // Adiciona ao Sorted Set
         if (status == StatusPayment.SUCCESS) {
+            // Adiciona ao Sorted Set
             redisTemplate.opsForZSet()
-                .add(paymentsByDateKey, paymentProcessorRedis, payment.requestedAt?.epochSecond!!.toDouble())
+                .add(KEY_PAYMENT_BY_DATE, paymentProcessorRedis, payment.requestedAt?.toEpochMilli()!!.toDouble())
+                .awaitSingle()
         }
+        redisTemplate.opsForValue().set(key, paymentProcessorRedis)
         log.info("Saved payment [${status}] with correlation ID: ${payment.correlationId}, requested at: ${payment.requestedAt}")
     }
 
-    override fun getAndSet(
+    override suspend fun getAndSet(
         payment: Payment,
         status: StatusPayment
     ): Payment? {
@@ -47,7 +53,7 @@ class PaymentReposityRedis(
             status = status.name,
             workerId = payment.workerId
         )
-        paymentProcessorRedis = redisTemplate.opsForValue().getAndSet(key, paymentProcessorRedis!!)
+        paymentProcessorRedis = redisTemplate.opsForValue().getAndSet(key, paymentProcessorRedis!!).awaitSingleOrNull()
         return paymentProcessorRedis?.let {
             Payment(
                 correlationId = UUID.fromString(it.correlationId),
@@ -66,15 +72,21 @@ class PaymentReposityRedis(
 
     }
 
-    override fun delete(correlationId: UUID) {
-        redisTemplate.delete("$correlationId").also {
+    override suspend fun delete(correlationId: UUID) {
+        redisTemplate.delete("$correlationId").awaitSingle().also {
             log.info("Deleted payment with correlation ID: $correlationId, exists: $it")
         }
     }
 
-    override fun findByDateRange(from: Instant, to: Instant): List<Payment> {
+    override suspend fun findByDateRange(from: Instant, to: Instant): List<Payment> {
+        val rangeDouble: Range<Double> = Range.closed(
+            from.toEpochMilli().toDouble(),
+            to.toEpochMilli().toDouble()
+        )
         return redisTemplate.opsForZSet()
-            .rangeByScore(paymentsByDateKey, from.epochSecond.toDouble(), to.epochSecond.toDouble())
+            .rangeByScore(KEY_PAYMENT_BY_DATE, rangeDouble)
+            .collectList()
+            .awaitFirstOrNull()
             ?.mapNotNull { paymentProcessorRedis ->
                 Payment(
                     correlationId = UUID.fromString(paymentProcessorRedis.correlationId),
@@ -84,17 +96,18 @@ class PaymentReposityRedis(
                     status = StatusPayment.valueOf(paymentProcessorRedis.status),
                     workerId = paymentProcessorRedis.workerId
                 )
-            }!!
+            } ?: emptyList<Payment>().also { log.info("No payments found in the date range from $from to $to") }
     }
 
-    override fun checkExists(correlationId: UUID): Boolean {
-        return redisTemplate.hasKey("$correlationId").also {
+
+    override suspend fun checkExists(correlationId: UUID): Boolean {
+        return redisTemplate.hasKey("$correlationId").awaitFirstOrDefault(false).also {
             log.info("Payment with correlation ID: $correlationId exists: $it")
         }
     }
 
     companion object {
-        private val paymentsByDateKey = "PAYMENTS_BY_DATE"
+        private const val KEY_PAYMENT_BY_DATE = "PAYMENTS_BY_DATE"
 
         private val log = LoggerFactory.getLogger(this::class.java)
     }

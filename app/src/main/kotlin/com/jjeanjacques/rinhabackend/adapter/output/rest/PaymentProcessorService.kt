@@ -27,7 +27,6 @@ class PaymentProcessorService(
             when (payment.type) {
                 TypePayment.DEFAULT -> requestPaymentDefault(payment)
                 TypePayment.FALLBACK -> {
-                    payment.type = TypePayment.FALLBACK
                     requestFallBackPayment(payment)
                 }
 
@@ -44,13 +43,13 @@ class PaymentProcessorService(
             }
             if (payment.type == TypePayment.DEFAULT) {
                 payment.type = TypePayment.FALLBACK
-                requestFallBackPayment(payment)
+                callPaymentProcessor(payment)
             }
         } catch (ex: Exception) {
             log.error("Error calling payment processor: ${ex.message}", ex)
             if (payment.type == TypePayment.DEFAULT) {
                 payment.type = TypePayment.FALLBACK
-                requestFallBackPayment(payment)
+                callPaymentProcessor(payment)
             }
         }
     }
