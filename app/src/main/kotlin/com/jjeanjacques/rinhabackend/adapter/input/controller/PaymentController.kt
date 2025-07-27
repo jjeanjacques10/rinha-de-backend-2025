@@ -19,7 +19,7 @@ class PaymentController(
     suspend fun processPayment(
         @RequestBody request: Payment
     ): PaymentResponse {
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             log.debug("Received payment request with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
             paymentService.sendToProcessor(request)
         }

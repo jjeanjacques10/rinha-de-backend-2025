@@ -1,4 +1,4 @@
-package com.jjeanjacques.rinhabackend.adapter.input.redis
+package com.jjeanjacques.rinhabackend.adapter.input.consumer
 
 import com.jjeanjacques.rinhabackend.domain.enums.StatusPayment
 import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
@@ -30,37 +30,24 @@ class PaymentConsumerRedis(
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onMessage(message: Message, pattern: ByteArray?) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val payment = message.toPayment()
 
-        val payment = message.toPayment()
-
-        if (payment.workerId != workerId) {
-            log.warn("Received payment with worker ID: ${payment.workerId}, but current worker ID is: $workerId. Ignoring message.")
-            return
-        }
-
-        CoroutineScope(Dispatchers.Default).launch {
-            val status = getPaymentStatus(message)
-            val paymentType = validateService.canProcessPayment()
-            if (paymentType == null || paymentType == TypePayment.TIMEOUT) {
-                log.error("Payment processor is not available, cannot process payments asynchronously.")
-                paymentProducerPort.send(payment, status)
+            if (payment.workerId != workerId) {
+                log.warn("Received payment with worker ID: ${payment.workerId}, but current worker ID is: $workerId. Ignoring message.")
                 return@launch
             }
-            log.info("Processing payment asynchronously: $payment with status: $status and type: $paymentType")
-            payment.type = paymentType
-            when (status) {
-                StatusPayment.TIMEOUT -> {
-                    paymentService.processTimeoutPayments(payment, paymentType)
-                }
-                else -> paymentService.processPendingPayments(payment, paymentType)
-            }
-        }
-    }
 
-    private fun getPaymentStatus(message: Message): StatusPayment {
-        val status =
-            message.body.decodeToString().let { extractJsonField(it, "status") }.let { StatusPayment.valueOf(it) }
-        return status
+            var paymentType = validateService.canProcessPayment()
+            if (paymentType == null) {
+                log.warn("Payment processor is not available, cannot process payments asynchronously. CorrelationID: ${payment.correlationId}")
+                paymentProducerPort.send(payment, payment.status)
+                return@launch
+            }
+            log.info("Processing payment asynchronously: $payment with status: ${payment.status} and type: $paymentType")
+            payment.type = paymentType
+            paymentService.processPayment(payment)
+        }
     }
 
     private fun Message.toPayment() =
@@ -72,8 +59,9 @@ class PaymentConsumerRedis(
             requestedAt = this.body.decodeToString().let { extractJsonField(it, "requestedAt") }
                 .let { Instant.parse(it) },
             workerId = this.body.decodeToString().let { extractJsonField(it, "workerId") },
-            status = this.body.decodeToString().let { extractJsonField(it, "status") }
-                .let { StatusPayment.valueOf(it) }
+            type = this.body.decodeToString().let { extractJsonField(it, "type") }
+                .let { if (it != "") TypePayment.valueOf(it) else TypePayment.DEFAULT },
+            status = this.body.decodeToString().let { extractJsonField(it, "status") }.let { StatusPayment.valueOf(it) }
         )
 
 

@@ -28,20 +28,22 @@ class PaymentService(
     }
 
     suspend fun processPayment(payment: Payment) {
-        log.info("Requesting payment with correlation ID: ${payment.correlationId}, amount: ${payment.amount}, requested at: ${payment.requestedAt}")
+        try {
+            log.info("Requesting payment with correlation ID: ${payment.correlationId}, amount: ${payment.amount}, requested at: ${payment.requestedAt}")
 
-        if (checkPaymentProcessing(payment)) {
-            log.info("Payment with correlation ID: ${payment.correlationId} is already being processed.")
-            return
-        }
+            val statusPayment = getStatusProcess(payment)
 
-        val statusPayment = getStatusProcess(payment)
-
-        log.info("Payment status for correlation ID: ${payment.correlationId} is $statusPayment")
-        paymentRepository.save(payment, statusPayment)
-
-        if (statusPayment != StatusPayment.SUCCESS) {
-            paymentProducerPort.send(payment, statusPayment)
+            log.info("Payment status for correlation ID: ${payment.correlationId} is $statusPayment")
+            when (statusPayment) {
+                StatusPayment.SUCCESS -> paymentRepository.save(payment, statusPayment)
+                else -> paymentProducerPort.send(payment, statusPayment)
+            }
+        } catch (ex: AlreadyProcessedRuntimeException) {
+            log.debug("Payment with correlation ID: ${payment.correlationId} has already been processed, skipping.", ex)
+        } catch (ex: Exception) {
+            throw ex.also {
+                log.error("Failed to process pending payment with correlation ID: ${payment.correlationId}", it)
+            }
         }
     }
 
@@ -52,60 +54,11 @@ class PaymentService(
         log.info("Payment with correlation ID: ${payment.correlationId} already processed, skipping.")
         StatusPayment.SUCCESS
     } catch (_: TimeoutRuntimeException) {
-        log.warn("Payment processor timed out for correlation ID: ${payment.correlationId}, falling back to fallback processor.")
-        StatusPayment.TIMEOUT
+        log.error("Payment processor timed out for correlation ID: ${payment.correlationId}, falling back to fallback processor.")
+        StatusPayment.PENDING
     } catch (_: Exception) {
         log.error("Payment processor failed for correlation ID: ${payment.correlationId}, falling back to fallback processor.")
         StatusPayment.PENDING
-    }
-
-    suspend fun processPendingPayments(payment: Payment, paymentType: TypePayment) {
-        try {
-            log.info("Processing pending payment with correlation ID: ${payment.correlationId}")
-            validatePaymentProcessed(payment)
-            processPayment(payment)
-        } catch (ex: AlreadyProcessedRuntimeException) {
-            log.debug("Payment with correlation ID: ${payment.correlationId} has already been processed, skipping.", ex)
-        } catch (ex: Exception) {
-            throw ex.also {
-                log.error("Failed to process pending payment with correlation ID: ${payment.correlationId}", it)
-            }
-        }
-    }
-
-    suspend fun processTimeoutPayments(payment: Payment, paymentType: TypePayment) {
-        try {
-            log.info("Processing timeout payment with correlation ID: ${payment.correlationId}")
-
-            val response = paymentProcessorService.requestPaymentById(payment.correlationId)
-
-            if (response == null) {
-                processPayment(payment)
-                return
-            }
-            paymentRepository.save(payment, StatusPayment.SUCCESS)
-            for (status in StatusPayment.entries) {
-                if (status != StatusPayment.SUCCESS) {
-                    paymentRepository.delete(payment.correlationId)
-                }
-            }
-        } catch (ex: Exception) {
-            log.error("Failed to process timeout payment with correlation ID: ${payment.correlationId}", ex)
-        }
-    }
-
-    private suspend fun checkPaymentProcessing(payment: Payment): Boolean {
-        return paymentRepository.getAndSet(payment, StatusPayment.PROCESSING) != null
-    }
-
-
-    suspend fun validatePaymentProcessed(payment: Payment) {
-        if (paymentRepository.checkExists(payment.correlationId)) {
-            log.info("Payment with correlation ID: ${payment.correlationId} already processed.")
-            throw AlreadyProcessedRuntimeException(
-                "Payment with correlation ID: ${payment.correlationId} already processed."
-            )
-        }
     }
 
     suspend fun getSummary(from: String, to: String): PaymentSummary? {

@@ -11,13 +11,19 @@ class ValidateStatusRedis(
 ) : ValidateStatusPort {
 
     override fun save(key: String, status: String) {
-        redisTemplate.opsForValue().set(key, status, 4950, java.util.concurrent.TimeUnit.MILLISECONDS)
+        redisTemplate.opsForValue().set(key, status, 4900, java.util.concurrent.TimeUnit.MILLISECONDS)
     }
 
     override fun get(key: String): String? {
-        return redisTemplate.opsForValue().get(key)
-            .also { value ->
-                log.debug("Retrieved status for key: $key, value: $value")
+        return redisTemplate.opsForValue().get(key).also { value ->
+            log.debug("Retrieved status for key: $key, value: $value")
+        }
+    }
+
+    override fun getAndSet(key: String, value: String): String? {
+        return redisTemplate.opsForValue().getAndSet(key, value)
+            .also { it ->
+                log.debug("Retrieved status for key: $key, value: $it and set new value: $value")
             }
     }
 

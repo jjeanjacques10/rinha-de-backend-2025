@@ -1,6 +1,6 @@
 package com.jjeanjacques.rinhabackend.infra
 
-import com.jjeanjacques.rinhabackend.adapter.input.redis.PaymentConsumerRedis
+import com.jjeanjacques.rinhabackend.adapter.input.consumer.PaymentConsumerRedis
 import com.jjeanjacques.rinhabackend.adapter.output.redis.entity.PaymentProcessorRedis
 import com.jjeanjacques.rinhabackend.domain.port.output.PaymentProducerPort
 import com.jjeanjacques.rinhabackend.domain.service.PaymentService

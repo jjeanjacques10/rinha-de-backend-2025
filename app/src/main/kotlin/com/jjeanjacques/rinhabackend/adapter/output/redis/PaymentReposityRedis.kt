@@ -29,14 +29,15 @@ class PaymentReposityRedis(
             requestedAt = payment.requestedAt.toString(),
             status = status.name
         )
-        val key = payment.correlationId.toString()
-        if (status == StatusPayment.SUCCESS) {
-            // Adiciona ao Sorted Set
-            redisTemplate.opsForZSet()
-                .add(KEY_PAYMENT_BY_DATE, paymentProcessorRedis, payment.requestedAt?.toEpochMilli()!!.toDouble())
-                .awaitSingle()
-        }
-        redisTemplate.opsForValue().set(key, paymentProcessorRedis)
+
+        // Adiciona ao Sorted Set
+        redisTemplate.opsForZSet()
+            .add(KEY_PAYMENT_BY_DATE, paymentProcessorRedis, payment.requestedAt?.toEpochMilli()!!.toDouble())
+            .awaitSingle()
+
+//        val key = payment.correlationId.toString()
+//        redisTemplate.opsForValue().set(key, paymentProcessorRedis)
+
         log.info("Saved payment [${status}] with correlation ID: ${payment.correlationId}, requested at: ${payment.requestedAt}")
     }
 

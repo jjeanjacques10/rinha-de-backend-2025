@@ -41,16 +41,11 @@ class PaymentProcessorService(
             if (ex.statusCode == HttpResponseStatus.REQUEST_TIMEOUT) {
                 throw TimeoutRuntimeException("Payment request timed out for correlation ID ${payment.correlationId}.")
             }
-            if (payment.type == TypePayment.DEFAULT) {
-                payment.type = TypePayment.FALLBACK
-                callPaymentProcessor(payment)
+            throw ex.also {
+                log.error("Failed to process payment with correlation ID: ${payment.correlationId}", it)
             }
         } catch (ex: Exception) {
             log.error("Error calling payment processor: ${ex.message}", ex)
-            if (payment.type == TypePayment.DEFAULT) {
-                payment.type = TypePayment.FALLBACK
-                callPaymentProcessor(payment)
-            }
         }
     }
 

@@ -6,8 +6,8 @@ x-service-templates:
     deploy:
       resources:
         limits:
-          cpus: "1.5"
-          memory: "350MB"
+          cpus: "5.5"
+          memory: "450MB"
 
 services:
   api1:
@@ -39,8 +39,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.15"
-          memory: "42MB"
+          cpus: "0.2"
+          memory: "30MB"
     ports:
       - "9999:80"
     volumes:
@@ -69,8 +69,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: "275MB"
+          cpus: "0.20"
+          memory: "20MB"
 
 
 networks:
