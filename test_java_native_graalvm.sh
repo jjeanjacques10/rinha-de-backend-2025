@@ -3,8 +3,7 @@
 echo "Starting the test script..."
 
 cd app
-#./mvnw spring-boot:build-image -Pnative -DskipTests
-./mvnw spring-boot:aot-generate -Pnative -DskipTests
+./mvnw spring-boot:build-image -Pnative -DskipTests
 cd ..
 
 docker-compose -f payment-processor/docker-compose.yml down --remove-orphans

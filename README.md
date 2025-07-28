@@ -2,15 +2,19 @@
 
 Projeto desenvolvido para a competição Rinha de Backend 2025, onde o objetivo é criar uma API RESTful para pagamentos.
 
+Repositório com o projeto: [jjeanjacques10/rinha-de-backend-2025](https://github.com/jjeanjacques10/rinha-de-backend-2025)
+
 ## Tecnologias Utilizadas 🚀
 
 - Java 21 ☕
 - Kotlin 🛠️
 - Spring Boot 3.2.5 🌱
+    - WebFlux 🌐
 - Spring Data JPA 🗄️
-- Redis 
+- Redis 🗑️
+    - Redis Streams 📜
 - Docker 🐳
-- GraalVM (em desenvolvimento) 🧪
+- GraalVM 🧪
 
 ## Estrutura do Projeto 🗂️
 
@@ -21,6 +25,8 @@ Segue uma tabela resumindo a estrutura do projeto:
 | `app/`                                              | Aplicação principal Spring Boot                                 |
 | ├─ `Dockerfile`                                     | Dockerfile para build da aplicação                              |
 | ├─ `src/main/kotlin/com/jjeanjacques/rinhabackend/` | Código-fonte Kotlin                                             |
+| ├─ `docker-compose.yml`                             | Configuração do Docker Compose para a aplicação                 |
+| ├─ `docker-compose-graalvm.yml`                     | Configuração do Docker Compose para a aplicação com GraalVM     |
 | `payment-processor/`                                | Infraestrutura de banco e orquestração oferecido para o desafio |
 | `rinha-test/`                                       | Scripts de teste de carga                                       |
 | ├─ `rinha.js`                                       | Script principal de teste                                       |
@@ -80,4 +86,14 @@ Para executar:
 
 ```
 ./test_java_native_graalvm.sh
+```
+
+#### Publicação da imagem Docker com GraalVM
+
+Nome da imagem local: `docker.io/jjeanjacques10/rinhabackend2025:graalvm`
+Nome da imagem remota: `jjeanjacques/rinhabackend2025:graalvm`
+
+```
+docker tag docker.io/jjeanjacques10/rinhabackend2025:graalvm jjeanjacques/rinhabackend2025:graalvm
+docker push jjeanjacques/rinhabackend2025:graalvm
 ```
