@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
+import java.time.Instant
 
 @RestController
 class PaymentController(
@@ -32,10 +33,13 @@ class PaymentController(
 
     @GetMapping("/payments-summary")
     suspend fun summaryPayments(
-        @RequestParam(required = false) from: String,
-        @RequestParam(required = false) to: String
+        @RequestParam(required = false) from: String?,
+        @RequestParam(required = false) to: String?
     ): PaymentSummary? {
-        return paymentService.getSummary(from, to)
+        return paymentService.getSummary(
+            from ?: Instant.now().minusSeconds(3600).toString(),
+            to ?: Instant.now().toString()
+        )
     }
 
     companion object {
