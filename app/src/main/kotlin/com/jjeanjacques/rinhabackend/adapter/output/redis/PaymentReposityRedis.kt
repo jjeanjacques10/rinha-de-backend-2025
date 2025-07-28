@@ -30,7 +30,6 @@ class PaymentReposityRedis(
             status = status.name
         )
 
-        // Adiciona ao Sorted Set
         redisTemplate.opsForZSet()
             .add(KEY_PAYMENT_BY_DATE, paymentProcessorRedis, payment.requestedAt?.toEpochMilli()!!.toDouble())
             .awaitSingle()
