@@ -4,5 +4,5 @@ enum class StatusPayment {
     PENDING,
     SUCCESS,
     TIMEOUT,
-    PROCESSING
+    ERROR
 }

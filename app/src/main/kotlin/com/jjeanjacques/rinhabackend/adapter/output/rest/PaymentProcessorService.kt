@@ -2,19 +2,19 @@ package com.jjeanjacques.rinhabackend.adapter.output.rest
 
 import com.jjeanjacques.rinhabackend.adapter.output.rest.client.PaymentProcessorClient
 import com.jjeanjacques.rinhabackend.adapter.output.rest.request.PaymentProcessorRequest
-import com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorResponse
 import com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorStatusResponse
 import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import com.jjeanjacques.rinhabackend.domain.exceptions.AlreadyProcessedRuntimeException
+import com.jjeanjacques.rinhabackend.domain.exceptions.IntegrationException
 import com.jjeanjacques.rinhabackend.domain.exceptions.TimeoutRuntimeException
 import com.jjeanjacques.rinhabackend.domain.models.Payment
 import com.jjeanjacques.rinhabackend.domain.utils.toString
-import io.netty.handler.codec.http.HttpResponseStatus
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
+import org.springframework.http.HttpStatusCode
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.time.format.DateTimeFormatter
-import java.util.UUID
 
 
 @Component
@@ -26,31 +26,32 @@ class PaymentProcessorService(
         try {
             when (payment.type) {
                 TypePayment.DEFAULT -> requestPaymentDefault(payment)
-                TypePayment.FALLBACK -> {
-                    requestFallBackPayment(payment)
-                }
-
+                TypePayment.FALLBACK -> requestFallBackPayment(payment)
                 TypePayment.TIMEOUT -> throw IllegalArgumentException("Unsupported payment type: ${payment.type}")
 
             }
         } catch (ex: WebClientResponseException) {
             log.error("WebClientResponseException calling payment processor: ${ex.message}", ex)
-            if (ex.statusCode == HttpResponseStatus.UNPROCESSABLE_ENTITY) {
+            if (ex.statusCode == HttpStatusCode.valueOf(422) || ex.statusCode == HttpStatus.UNPROCESSABLE_ENTITY) {
                 throw AlreadyProcessedRuntimeException("Payment with correlation ID ${payment.correlationId} has already been processed or is invalid.")
             }
-            if (ex.statusCode == HttpResponseStatus.REQUEST_TIMEOUT) {
+            if (ex.statusCode == HttpStatusCode.valueOf(408)) {
                 throw TimeoutRuntimeException("Payment request timed out for correlation ID ${payment.correlationId}.")
             }
+            if (ex.statusCode == HttpStatusCode.valueOf(500)) {
+                throw IntegrationException("Payment processor is unavailable")
+            }
             throw ex.also {
-                log.error("Failed to process payment with correlation ID: ${payment.correlationId}", it)
+                log.error("Failed to process payment with correlation ID: ${payment.correlationId} and status: ${ex.statusCode}", it)
             }
         } catch (ex: Exception) {
-            log.error("Error calling payment processor: ${ex.message}", ex)
+            log.error("Error calling payment processor correlation ID: ${payment.correlationId}: ${ex.message}", ex)
+            throw IntegrationException("Payment processor error for correlation ID ${payment.correlationId}: ${ex.message}")
         }
     }
 
-    suspend fun requestPaymentDefault(payment: Payment): PaymentProcessorResponse? {
-        return paymentProcessorClient.requestPaymentProcessorDefault(
+    suspend fun requestPaymentDefault(payment: Payment) {
+        paymentProcessorClient.requestPaymentProcessorDefault(
             PaymentProcessorRequest(
                 correlationId = payment.correlationId,
                 amount = payment.amount,
@@ -61,9 +62,9 @@ class PaymentProcessorService(
         )
     }
 
-    suspend fun requestFallBackPayment(payment: Payment): PaymentProcessorResponse? {
+    suspend fun requestFallBackPayment(payment: Payment) {
         log.warn("🔥 Falling back to fallback payment processor for correlation ID: ${payment.correlationId} 🔥")
-        return paymentProcessorFallbackClient.requestPaymentProcessorFallback(
+        paymentProcessorFallbackClient.requestPaymentProcessorFallback(
             PaymentProcessorRequest(
                 correlationId = payment.correlationId,
                 amount = payment.amount,
@@ -72,17 +73,6 @@ class PaymentProcessorService(
                 )
             )
         )
-    }
-
-    suspend fun requestPaymentById(paymentId: UUID): Payment? {
-        return try {
-            paymentProcessorClient.requestPaymentById(paymentId)!!
-        } catch (ex: WebClientResponseException) {
-            if (ex.statusCode == HttpResponseStatus.NOT_FOUND) {
-                log.warn("Payment with ID $paymentId not found: ${ex.message}", ex)
-            }
-            null
-        }
     }
 
 

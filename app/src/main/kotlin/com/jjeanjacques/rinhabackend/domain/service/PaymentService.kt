@@ -4,6 +4,7 @@ import com.jjeanjacques.rinhabackend.adapter.output.rest.PaymentProcessorService
 import com.jjeanjacques.rinhabackend.domain.enums.StatusPayment
 import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import com.jjeanjacques.rinhabackend.domain.exceptions.AlreadyProcessedRuntimeException
+import com.jjeanjacques.rinhabackend.domain.exceptions.IntegrationException
 import com.jjeanjacques.rinhabackend.domain.exceptions.TimeoutRuntimeException
 import com.jjeanjacques.rinhabackend.domain.models.DefaultDetails
 import com.jjeanjacques.rinhabackend.domain.models.FallbackDetails
@@ -27,7 +28,7 @@ class PaymentService(
         paymentProducerPort.send(payment, StatusPayment.PENDING)
     }
 
-    suspend fun processPayment(payment: Payment) {
+    suspend fun processPayment(payment: Payment): StatusPayment {
         try {
             log.info("Requesting payment with correlation ID: ${payment.correlationId}, amount: ${payment.amount}, requested at: ${payment.requestedAt}")
 
@@ -36,15 +37,14 @@ class PaymentService(
             log.info("Payment status for correlation ID: ${payment.correlationId} is $statusPayment")
             when (statusPayment) {
                 StatusPayment.SUCCESS -> paymentRepository.save(payment, statusPayment)
+                StatusPayment.ERROR -> log.warn("Ignoring payment with correlation ID: ${payment.correlationId} due to error status.")
                 else -> paymentProducerPort.send(payment, statusPayment)
             }
-        } catch (ex: AlreadyProcessedRuntimeException) {
-            log.debug("Payment with correlation ID: ${payment.correlationId} has already been processed, skipping.", ex)
+            return statusPayment
         } catch (ex: Exception) {
-            throw ex.also {
-                log.error("Failed to process pending payment with correlation ID: ${payment.correlationId}", it)
-            }
+            log.error("Failed to process pending payment with correlation ID: ${payment.correlationId}", ex)
         }
+        return StatusPayment.ERROR
     }
 
     private suspend fun getStatusProcess(payment: Payment) = try {
@@ -54,11 +54,14 @@ class PaymentService(
         log.info("Payment with correlation ID: ${payment.correlationId} already processed, skipping.")
         StatusPayment.SUCCESS
     } catch (_: TimeoutRuntimeException) {
-        log.error("Payment processor timed out for correlation ID: ${payment.correlationId}, falling back to fallback processor.")
+        log.error("Payment processor timed out for correlation ID: ${payment.correlationId}")
         StatusPayment.PENDING
-    } catch (_: Exception) {
-        log.error("Payment processor failed for correlation ID: ${payment.correlationId}, falling back to fallback processor.")
-        StatusPayment.PENDING
+    } catch (_: IntegrationException) {
+        log.error("Payment processor is unavailable for correlation ID: ${payment.correlationId}")
+        StatusPayment.ERROR
+    } catch (ex: Exception) {
+        log.error("Payment processor failed for correlation ID: ${payment.correlationId}")
+        StatusPayment.ERROR
     }
 
     suspend fun getSummary(from: String, to: String): PaymentSummary? {
