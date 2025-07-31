@@ -1,0 +1,116 @@
+[
+  {
+    "name": "io.netty.handler.timeout.ReadTimeoutHandler",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.netty.handler.timeout.WriteTimeoutHandler",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "reactor.netty.http.client.HttpClient",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "reactor.netty.http.client.HttpClientConfig",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.springframework.web.reactive.function.client.WebClient",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.springframework.http.client.reactive.ReactorClientHttpConnector",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.springframework.beans.factory.annotation.Value",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.fasterxml.jackson.module.kotlin.KotlinModule",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.fasterxml.jackson.datatype.jsr310.JavaTimeModule",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.lettuce.core.RedisClient",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.lettuce.core.api.StatefulRedisConnection",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.lettuce.core.api.reactive.RedisReactiveCommands",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.lettuce.core.api.StatefulRedisConnectionImpl",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.lettuce.core.resource.ClientResources",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.lettuce.core.resource.ClientResourcesBuilder",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorStatusResponse",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.web.reactive.function.client.WebClientResponseException$UnprocessableEntity",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.web.reactive.function.client.WebClientResponseException$BadRequest",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.web.reactive.function.client.WebClientResponseException$InternalServerError",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.web.reactive.function.client.WebClientResponseException$NotFound",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.web.reactive.function.client.WebClientResponseException$TooManyRequests",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.web.reactive.function.client.WebClientResponseException",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.web.reactive.function.client.WebClientResponseException$GatewayTimeout",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorResponse",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  }
+]

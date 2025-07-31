@@ -4,7 +4,6 @@ import com.jjeanjacques.rinhabackend.domain.enums.StatusPayment
 import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import java.math.BigDecimal
 import java.time.Instant
-import java.util.UUID
 
 data class Payment(
     val correlationId: String,

@@ -17,7 +17,6 @@ import org.springframework.data.redis.connection.MessageListener
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.Instant
-import java.util.*
 
 @Service
 class PaymentConsumerRedis(
@@ -46,7 +45,10 @@ class PaymentConsumerRedis(
             }
             log.info("Processing payment asynchronously: $payment with status: ${payment.status} and type: $paymentType")
             payment.type = paymentType
-            paymentService.processPayment(payment)
+            val status = paymentService.processPayment(payment)
+            if (status == StatusPayment.ERROR) {
+                validateService.incrementErrorCount()
+            }
         }
     }
 
