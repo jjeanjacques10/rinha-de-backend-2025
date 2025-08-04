@@ -21,7 +21,7 @@ class PaymentController(
         @RequestBody request: Payment
     ): PaymentResponse {
         CoroutineScope(Dispatchers.IO).launch {
-            log.debug("Received payment request with correlation ID: ${request.correlationId}, amount: ${request.amount}, requested at: ${request.requestedAt}")
+            log.info("[${request.correlationId}] Received payment request, request: $request")
             paymentService.sendToProcessor(request)
         }
 

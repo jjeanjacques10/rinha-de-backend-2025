@@ -28,11 +28,10 @@ class PaymentProcessorService(
                 TypePayment.DEFAULT -> requestPaymentDefault(payment)
                 TypePayment.FALLBACK -> requestFallBackPayment(payment)
                 TypePayment.TIMEOUT -> throw IllegalArgumentException("Unsupported payment type: ${payment.type}")
-
             }
         } catch (ex: WebClientResponseException) {
-            log.error("WebClientResponseException calling payment processor: ${ex.message}", ex)
-            if (ex.statusCode == HttpStatusCode.valueOf(422) || ex.statusCode == HttpStatus.UNPROCESSABLE_ENTITY) {
+            log.error("[${payment.correlationId}] WebClientResponseException calling payment processor: ${ex.message}", ex)
+            if (ex.statusCode == HttpStatusCode.valueOf(422)) {
                 throw AlreadyProcessedRuntimeException("Payment with correlation ID ${payment.correlationId} has already been processed or is invalid.")
             }
             if (ex.statusCode == HttpStatusCode.valueOf(408)) {
@@ -42,10 +41,10 @@ class PaymentProcessorService(
                 throw IntegrationException("Payment processor is unavailable")
             }
             throw ex.also {
-                log.error("Failed to process payment with correlation ID: ${payment.correlationId} and status: ${ex.statusCode}", it)
+                log.error("[${payment.correlationId}] Failed to process payment with correlation ID: ${payment.correlationId} and status: ${ex.statusCode}", it)
             }
         } catch (ex: Exception) {
-            log.error("Error calling payment processor correlation ID: ${payment.correlationId}: ${ex.message}", ex)
+            log.error("[${payment.correlationId}] Error calling payment processor correlation ID: ${ex.message}", ex)
             throw IntegrationException("Payment processor error for correlation ID ${payment.correlationId}: ${ex.message}")
         }
     }
@@ -63,7 +62,7 @@ class PaymentProcessorService(
     }
 
     suspend fun requestFallBackPayment(payment: Payment) {
-        log.warn("🔥 Falling back to fallback payment processor for correlation ID: ${payment.correlationId} 🔥")
+        log.warn("[${payment.correlationId}] Falling back to fallback payment processor")
         paymentProcessorFallbackClient.requestPaymentProcessorFallback(
             PaymentProcessorRequest(
                 correlationId = payment.correlationId,

@@ -22,14 +22,14 @@ class PaymentProducerRedis(
 
     override suspend fun send(payment: Payment, statusPayment: StatusPayment) {
         val paymentProcessorRedis = PaymentProcessorRedis(
-            correlationId = payment.correlationId.toString(),
+            correlationId = payment.correlationId,
             amount = payment.amount.toString(),
             requestedAt = payment.requestedAt.toString(),
             status = statusPayment.name,
             workerId = workerId
         )
         redisTemplate.convertAndSend(topic.topic, paymentProcessorRedis).awaitSingle()
-        log.info("Sent payment to Redis topic: ${topic.topic}, payment: $paymentProcessorRedis")
+        log.info("[${payment.correlationId}] Sent payment to Redis topic: ${topic.topic}, paymentRedis: $paymentProcessorRedis")
     }
 
     companion object {
