@@ -112,5 +112,17 @@
     "allDeclaredConstructors": true,
     "allDeclaredMethods": true,
     "allDeclaredFields": true
+  },
+  {
+    "name": "com.jjeanjacques.rinhabackend.adapter.output.redis.entity.PaymentProcessorRedis",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.jjeanjacques.rinhabackend.adapter.output.rest.request.PaymentProcessorRequest",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
   }
 ]

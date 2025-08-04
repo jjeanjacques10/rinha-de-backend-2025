@@ -61,13 +61,13 @@ class ValidateService(
         }
     }
 
-    fun incrementErrorCount() {
+    suspend fun incrementErrorCount() {
         val counter = validateStatusPort.incrementErrorCount(API_ERROR_COUNT)
 
         if (counter > 15) {
             validateStatusPort.delete(API_PAYMENT_PROCESSOR_STATUS)
-            validateStatusPort.delete(API_PAYMENT_PROCESSOR_FALLBACK_STATUS)
             validateStatusPort.delete(API_ERROR_COUNT)
+            validatePaymentProcessorStatus()
         }
     }
 

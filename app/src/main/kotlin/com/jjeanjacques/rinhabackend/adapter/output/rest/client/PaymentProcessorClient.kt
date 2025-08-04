@@ -4,18 +4,16 @@ import com.jjeanjacques.rinhabackend.adapter.output.rest.request.PaymentProcesso
 import com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorResponse
 import com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorStatusResponse
 import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
-import com.jjeanjacques.rinhabackend.domain.models.Payment
 import io.netty.handler.codec.http.HttpResponseStatus
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
-import java.util.*
 
 @Component
 class PaymentProcessorClient(
-    @Qualifier("paymentProcessorWebClient")
+    @Qualifier("paymentProcessorWebClientDefault")
     private val webClient: WebClient,
     @Qualifier("paymentProcessorFallbackWebClient")
     private val webClientFallback: WebClient
@@ -36,25 +34,6 @@ class PaymentProcessorClient(
             .retrieve()
             .bodyToMono(PaymentProcessorResponse::class.java)
             .awaitSingle()
-
-    suspend fun requestPaymentById(
-        paymentId: UUID
-    ): Payment? {
-        return try {
-            webClient.get()
-                .uri("/payments/$paymentId")
-                .retrieve()
-                .bodyToMono(Payment::class.java)
-                .awaitSingle()
-        } catch (ex: Exception) {
-            log.error("Error requesting payment by ID: ${ex.message}")
-            webClientFallback.get()
-                .uri("/payments/$paymentId")
-                .retrieve()
-                .bodyToMono(Payment::class.java)
-                .awaitSingle()
-        }
-    }
 
 
     suspend fun requestPaymentProcessorStatus(

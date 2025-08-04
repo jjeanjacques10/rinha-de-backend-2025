@@ -33,17 +33,17 @@ class PaymentConsumerRedis(
             val payment = message.toPayment()
 
             if (payment.workerId != workerId) {
-                log.warn("Received payment with worker ID: ${payment.workerId}, but current worker ID is: $workerId. Ignoring message.")
+                log.warn("[${payment.correlationId}] Received payment with worker ID: ${payment.workerId}, but current worker ID is: $workerId. Ignoring message.")
                 return@launch
             }
 
             var paymentType = validateService.canProcessPayment()
             if (paymentType == null) {
-                log.warn("Payment processor is not available, cannot process payments asynchronously. CorrelationID: ${payment.correlationId}")
+                log.warn("[${payment.correlationId}] Payment processor is not available, cannot process payments asynchronously.")
                 paymentProducerPort.send(payment, payment.status)
                 return@launch
             }
-            log.info("Processing payment asynchronously: $payment with status: ${payment.status} and type: $paymentType")
+            log.info("[${payment.correlationId}] Processing payment asynchronously: $payment with status: ${payment.status} and type: $paymentType")
             payment.type = paymentType
             val status = paymentService.processPayment(payment)
             if (status == StatusPayment.ERROR) {
