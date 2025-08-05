@@ -43,31 +43,23 @@ class PaymentConsumerRedis(
                 paymentProducerPort.send(payment, payment.status)
                 return@launch
             }
-            log.info("[${payment.correlationId}] Processing payment asynchronously: $payment with status: ${payment.status} and type: $paymentType")
+            log.info("[${payment.correlationId}] Processing payment: $payment")
             payment.type = paymentType
-            val status = paymentService.processPayment(payment)
-            if (status == StatusPayment.ERROR) {
-                validateService.incrementErrorCount()
-            }
+            paymentService.processPayment(payment)
         }
     }
 
-    private fun Message.toPayment() =
-        Payment(
-            correlationId = this.body.decodeToString().let { extractJsonField(it, "correlationId") },
-            amount = this.body.decodeToString().let { extractJsonField(it, "amount") }
-                .let { BigDecimal.valueOf(it.toDouble()) },
-            requestedAt = this.body.decodeToString().let { extractJsonField(it, "requestedAt") }
-                .let { Instant.parse(it) },
-            workerId = this.body.decodeToString().let { extractJsonField(it, "workerId") },
-            type = this.body.decodeToString().let { extractJsonField(it, "type") }
-                .let { if (it != "") TypePayment.valueOf(it) else TypePayment.DEFAULT },
-            status = this.body.decodeToString().let { extractJsonField(it, "status") }.let { StatusPayment.valueOf(it) }
-        )
+    private fun Message.toPayment() = Payment(
+        correlationId = extractField("correlationId"),
+        amount = BigDecimal(extractField("amount").toDouble()),
+        requestedAt = Instant.parse(extractField("requestedAt")),
+        workerId = extractField("workerId"),
+        type = extractField("type").takeIf { it.isNotEmpty() }?.let { TypePayment.valueOf(it) } ?: TypePayment.DEFAULT,
+        status = StatusPayment.valueOf(extractField("status"))
+    )
 
-
-    private fun extractJsonField(json: String, field: String): String =
-        json.substringAfter("\"$field\":\"").substringBefore("\"")
+    private fun Message.extractField(field: String) =
+        body.decodeToString().substringAfter("\"$field\":\"").substringBefore("\"")
 
     companion object {
         private val log = LoggerFactory.getLogger(this::class.java)

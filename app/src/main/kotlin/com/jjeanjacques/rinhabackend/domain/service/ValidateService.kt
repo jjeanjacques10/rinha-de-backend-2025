@@ -4,7 +4,6 @@ import com.jjeanjacques.rinhabackend.adapter.output.rest.PaymentProcessorService
 import com.jjeanjacques.rinhabackend.adapter.output.rest.response.PaymentProcessorStatusResponse
 import com.jjeanjacques.rinhabackend.domain.enums.TypePayment
 import com.jjeanjacques.rinhabackend.domain.port.output.ValidateStatusPort
-import com.jjeanjacques.rinhabackend.domain.port.output.ValidateStatusPort.Companion.API_ERROR_COUNT
 import com.jjeanjacques.rinhabackend.domain.port.output.ValidateStatusPort.Companion.API_PAYMENT_PROCESSOR_FALLBACK_STATUS
 import com.jjeanjacques.rinhabackend.domain.port.output.ValidateStatusPort.Companion.API_PAYMENT_PROCESSOR_STATUS
 import org.springframework.stereotype.Service
@@ -55,19 +54,11 @@ class ValidateService(
             !defaultStatus && !fallbackStatus -> null
             defaultStatus && timeoutStatus <= 1000 -> TypePayment.DEFAULT
             fallbackStatus && timeoutStatusFallback <= 1000 -> TypePayment.FALLBACK
+            defaultStatus -> TypePayment.DEFAULT
+            fallbackStatus -> TypePayment.FALLBACK
             else -> null
         }.also { type ->
             log.debug("Can process payment with type: {}", type)
-        }
-    }
-
-    suspend fun incrementErrorCount() {
-        val counter = validateStatusPort.incrementErrorCount(API_ERROR_COUNT)
-
-        if (counter > 15) {
-            validateStatusPort.delete(API_PAYMENT_PROCESSOR_STATUS)
-            validateStatusPort.delete(API_ERROR_COUNT)
-            validatePaymentProcessorStatus()
         }
     }
 
