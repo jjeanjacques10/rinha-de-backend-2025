@@ -2,16 +2,8 @@
 
 echo "Starting the test script..."
 
-cd app
-./mvnw spring-boot:build-image -Pnative-api -DskipTests
-./mvnw spring-boot:build-image -Pworker -DskipTests
-cd ..
-
 docker-compose -f payment-processor/docker-compose.yml down --remove-orphans
 docker-compose -f payment-processor/docker-compose.yml up -d --build
-
-docker-compose -f app/docker-compose-graalvm-worker.yml down --remove-orphans
-docker-compose -f app/docker-compose-graalvm-worker.yml up -d --build
 
 echo "Setting up environment variables for k6..."
 export K6_WEB_DASHBOARD=true

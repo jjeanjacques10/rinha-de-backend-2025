@@ -130,7 +130,7 @@
 
     <profiles>
         <profile>
-            <id>native</id>
+            <id>native-api</id>
             <build>
                 <plugins>
                     <plugin>
@@ -143,6 +143,31 @@
                         <configuration>
                             <image>
                                 <name>jjeanjacques10/rinhabackend2025:graalvm</name>
+                                <builder>paketobuildpacks/builder-jammy-java-tiny:latest</builder>
+                                <env>
+                                    <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
+                                    <BP_JVM_VERSION>21</BP_JVM_VERSION>
+                                </env>
+                            </image>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>worker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <configuration>
+                            <image>
+                                <name>jjeanjacques10/rinhabackend2025:graalvm-worker</name>
                                 <builder>paketobuildpacks/builder-jammy-java-tiny:latest</builder>
                                 <env>
                                     <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>

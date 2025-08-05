@@ -1,7 +1,7 @@
 server:
   port: ${APP_PORT:9999}
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:api}
+    active: worker
 
 worker:
   id: ${WORKER_ID:1}

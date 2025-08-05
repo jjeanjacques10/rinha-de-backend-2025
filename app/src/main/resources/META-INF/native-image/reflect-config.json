@@ -124,5 +124,15 @@
     "allDeclaredConstructors": true,
     "allDeclaredMethods": true,
     "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.context.annotation.Profile",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.jjeanjacques.rinhabackend.adapter.input.cron.ValidateStatusScheduler",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
   }
 ]

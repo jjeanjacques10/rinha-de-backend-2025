@@ -45,10 +45,7 @@ class PaymentConsumerRedis(
             }
             log.info("[${payment.correlationId}] Processing payment asynchronously: $payment with status: ${payment.status} and type: $paymentType")
             payment.type = paymentType
-            val status = paymentService.processPayment(payment)
-            if (status == StatusPayment.ERROR) {
-                validateService.incrementErrorCount()
-            }
+            paymentService.processPayment(payment)
         }
     }
 

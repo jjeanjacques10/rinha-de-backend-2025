@@ -1,6 +1,5 @@
 x-service-templates:
   api1: &api-processor
-    #image: docker.io/jjeanjacques10/rinhabackend2025:graalvm
     image: docker.io/jjeanjacques10/rinhabackend2025:graalvm
     networks:
       - payment-processor
@@ -14,8 +13,24 @@ x-service-templates:
     deploy:
       resources:
         limits:
-          cpus: '0.6'
-          memory: '160MB'
+          cpus: '0.3'
+          memory: '80MB'
+  worker-processor: &worker-processor
+    image: docker.io/jjeanjacques10/rinhabackend2025:graalvm-worker
+    networks:
+      - payment-processor
+    restart: on-failure
+    ulimits:
+      nofile:
+        soft: 1000000
+        hard: 1000000
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: '82MB'
 
 services:
   api1:
@@ -24,6 +39,7 @@ services:
     hostname: api1
     environment:
       - APP_PORT=8080
+      - SPRING_PROFILES_ACTIVE=api1
       - WORKER_ID=1
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
@@ -36,6 +52,31 @@ services:
     hostname: api2
     environment:
       - APP_PORT=8080
+      - SPRING_PROFILES_ACTIVE=api2
+      - WORKER_ID=2
+      - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
+      - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
+      - REDIS_HOST=redis-rinha
+      - LOG_LEVEL=ERROR
+
+  worker1:
+    <<: *worker-processor
+    container_name: worker1
+    environment:
+      - APP_PORT=8080
+      - SPRING_PROFILES_ACTIVE=worker
+      - WORKER_ID=1
+      - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
+      - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
+      - REDIS_HOST=redis-rinha
+      - LOG_LEVEL=INFO
+
+  worker2:
+    <<: *worker-processor
+    container_name: worker2
+    environment:
+      - APP_PORT=8080
+      - SPRING_PROFILES_ACTIVE=worker
       - WORKER_ID=2
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
