@@ -27,6 +27,12 @@ class ValidateStatusRedis(
             }
     }
 
+    override fun incrementErrorCount(key: String): Long {
+        val currentCount = redisTemplate.opsForValue().increment(key, 1) ?: 0
+        log.debug("Incremented error count for key: $key, new count: $currentCount")
+        return currentCount
+    }
+
     override fun delete(key: String) {
         redisTemplate.delete(key)
         log.debug("Deleted key: $key from Redis")
