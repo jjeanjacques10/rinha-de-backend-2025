@@ -25,10 +25,7 @@ class PaymentController(
             paymentService.sendToProcessor(request)
         }
 
-        return PaymentResponse(
-            status = "success",
-            message = "Payment received and will be processed asynchronously"
-        )
+        return PaymentResponse(status = SUCCESS)
     }
 
     @GetMapping("/payments-summary")
@@ -43,6 +40,7 @@ class PaymentController(
     }
 
     companion object {
+        private const val SUCCESS = "success"
         private val log = LoggerFactory.getLogger(this::class.java)
     }
 

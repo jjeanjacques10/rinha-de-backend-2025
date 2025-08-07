@@ -148,12 +148,6 @@
                                     <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
                                     <BP_JVM_VERSION>21</BP_JVM_VERSION>
                                     <BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
-                                        -H:IncludeResources=".*"
-                                        -march=native
-                                        --native-compiler-options=-march=native
-                                        --native-compiler-options=-mtune=native
-                                        --no-fallback
-                                        -O3
                                         --gc=parallel
                                         --enable-preview
                                     </BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
