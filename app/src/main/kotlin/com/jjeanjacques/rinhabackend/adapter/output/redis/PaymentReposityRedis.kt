@@ -58,13 +58,7 @@ class PaymentReposityRedis(
                 status = StatusPayment.valueOf(it.status),
                 workerId = it.workerId
             )
-        }.also { payment ->
-            if (payment != null) {
-                log.info("[${payment.correlationId}] Updated payment, status: $status")
-            }
-            null
         }
-
     }
 
     override suspend fun findByDateRange(from: Instant, to: Instant): List<Payment> {

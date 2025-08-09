@@ -75,8 +75,7 @@ class PaymentService(
         val paymentsFallback = payments.filter { it.type == TypePayment.FALLBACK }
 
         log.info(
-            "Payments summary from $from to $to: " +
-                    "Default requests: ${paymentsDefault.size}, " +
+            "Payments summary from $from to $to: Default requests: ${paymentsDefault.size}, " +
                     "Total amount: ${paymentsDefault.sumOf { it.amount }}, " +
                     "Fallback requests: ${paymentsFallback.size}, " +
                     "Total amount: ${paymentsFallback.sumOf { it.amount }}"

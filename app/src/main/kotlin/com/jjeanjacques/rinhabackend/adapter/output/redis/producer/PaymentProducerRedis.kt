@@ -8,7 +8,6 @@ import kotlinx.coroutines.reactor.awaitSingle
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.ReactiveRedisTemplate
-import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.listener.ChannelTopic
 import org.springframework.stereotype.Component
 
@@ -26,6 +25,7 @@ class PaymentProducerRedis(
             amount = payment.amount.toString(),
             requestedAt = payment.requestedAt.toString(),
             status = statusPayment.name,
+            type = payment.type.name,
             workerId = workerId
         )
         redisTemplate.convertAndSend(topic.topic, paymentProcessorRedis).awaitSingle()
