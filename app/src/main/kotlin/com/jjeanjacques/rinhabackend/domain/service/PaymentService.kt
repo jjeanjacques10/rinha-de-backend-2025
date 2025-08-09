@@ -22,12 +22,7 @@ class PaymentService(
     private val paymentProducerPort: PaymentProducerPort,
     private val paymentRepository: PaymentRepository
 ) {
-
-    suspend fun sendToProcessor(payment: Payment) {
-        log.debug("[${payment.correlationId}] Sending payment to processor.")
-        paymentProducerPort.send(payment, StatusPayment.PENDING)
-    }
-
+    
     suspend fun processPayment(payment: Payment): StatusPayment {
         try {
             log.info("[${payment.correlationId}] Requesting payment, requested at: ${payment.requestedAt}")
@@ -38,13 +33,18 @@ class PaymentService(
             when (statusPayment) {
                 StatusPayment.SUCCESS -> paymentRepository.save(payment, statusPayment)
                 StatusPayment.ERROR -> log.warn("Ignoring payment due to error status.")
-                else -> paymentProducerPort.send(payment, statusPayment)
+                else -> this.sendToProcessor(payment, statusPayment)
             }
             return statusPayment
         } catch (ex: Exception) {
             log.error("[${payment.correlationId}] Failed to process pending payment", ex)
         }
         return StatusPayment.ERROR
+    }
+
+    private suspend fun sendToProcessor(payment: Payment, statusPayment: StatusPayment) {
+        log.debug("[${payment.correlationId}] Sending payment to processor.")
+        paymentProducerPort.send(payment, statusPayment)
     }
 
     private suspend fun getStatusProcess(payment: Payment) = try {
@@ -75,8 +75,7 @@ class PaymentService(
         val paymentsFallback = payments.filter { it.type == TypePayment.FALLBACK }
 
         log.info(
-            "Payments summary from $from to $to: " +
-                    "Default requests: ${paymentsDefault.size}, " +
+            "Payments summary from $from to $to: Default requests: ${paymentsDefault.size}, " +
                     "Total amount: ${paymentsDefault.sumOf { it.amount }}, " +
                     "Fallback requests: ${paymentsFallback.size}, " +
                     "Total amount: ${paymentsFallback.sumOf { it.amount }}"

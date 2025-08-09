@@ -19,6 +19,7 @@ stopContainers() {
     pushd ../participantes/$1
         docker compose down -v --remove-orphans
         docker compose rm -s -v -f
+        find * ! -group $(whoami) | xargs sudo rm -rf
     popd > /dev/null
     pushd ../payment-processor > /dev/null
         docker compose down --volumes > /dev/null
@@ -51,7 +52,7 @@ while true; do
             max_attempts=15
             attempt=1
             while [ $success -ne 0 ] && [ $max_attempts -ge $attempt ]; do
-                curl -f -s http://localhost:9999/payments-summary
+                curl -f -s --max-time 3 localhost:9999/payments-summary
                 success=$?
                 echo "tried $attempt out of $max_attempts..."
                 sleep 5

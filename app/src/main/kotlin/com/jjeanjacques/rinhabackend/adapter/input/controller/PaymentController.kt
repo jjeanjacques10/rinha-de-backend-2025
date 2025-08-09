@@ -22,7 +22,7 @@ class PaymentController(
     ): PaymentResponse {
         CoroutineScope(Dispatchers.IO).launch {
             log.info("[${request.correlationId}] Received payment request, request: $request")
-            paymentService.sendToProcessor(request)
+            paymentService.processPayment(request)
         }
 
         return PaymentResponse(status = SUCCESS)

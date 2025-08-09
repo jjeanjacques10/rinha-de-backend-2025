@@ -1,5 +1,6 @@
 package com.jjeanjacques.rinhabackend.infra
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.jjeanjacques.rinhabackend.adapter.input.consumer.PaymentConsumerRedis
 import com.jjeanjacques.rinhabackend.adapter.output.redis.entity.PaymentProcessorRedis
 import com.jjeanjacques.rinhabackend.domain.port.output.PaymentProducerPort
@@ -24,8 +25,10 @@ import org.springframework.data.redis.serializer.StringRedisSerializer
 class RedisConfig {
 
     @Bean
-    fun topic(): ChannelTopic {
-        return ChannelTopic("paymentQueue")
+    fun topic(
+        @Value("\${worker.id}") workerId: String
+    ): ChannelTopic {
+        return ChannelTopic("paymentQueue$workerId")
     }
 
     @Bean
@@ -54,15 +57,14 @@ class RedisConfig {
         validateService: ValidateService,
         paymentService: PaymentService,
         paymentProducerPort: PaymentProducerPort,
-        @Value("\${worker.id}")
-        workerId: String
+        objectMapper: ObjectMapper
     ): MessageListenerAdapter {
         return MessageListenerAdapter(
             PaymentConsumerRedis(
                 validateService,
                 paymentService,
                 paymentProducerPort,
-                workerId
+                objectMapper
             )
         )
     }

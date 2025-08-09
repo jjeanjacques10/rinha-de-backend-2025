@@ -5,9 +5,11 @@ alta performance para processamento de pagamentos.
 
 ## 🔗 Links Importantes
 
-- Repositório da aplicação: [github.com/jjeanjacques10/rinha-de-backend-2025](https://github.com/jjeanjacques10/rinha-de-backend-2025)
+- Repositório da
+  aplicação: [github.com/jjeanjacques10/rinha-de-backend-2025](https://github.com/jjeanjacques10/rinha-de-backend-2025)
 - Repositório do desafio: [zanfranceschi/rinha-de-backend-2025](https://github.com/zanfranceschi/rinha-de-backend-2025)
-  - Submissão do desafio: [participantes/jjeanjacques10](https://github.com/zanfranceschi/rinha-de-backend-2025/tree/main/participantes/jjeanjacques10)
+    - Submissão do
+      desafio: [participantes/jjeanjacques10](https://github.com/zanfranceschi/rinha-de-backend-2025/tree/main/participantes/jjeanjacques10)
 
 ---
 
@@ -20,7 +22,7 @@ alta performance para processamento de pagamentos.
     * Spring Data JPA
 * **Redis**
 
-    * Redis Streams
+    * Pub/Sub para comunicação assíncrona
 * **Docker**
 * **GraalVM (build nativo)**
 
@@ -105,8 +107,8 @@ Etapas:
 ### 📤 Publicação da imagem (GraalVM)
 
 ```bash
-docker tag docker.io/jjeanjacques10/rinhabackend2025:graalvm jjeanjacques/rinhabackend2025:graalvm-v5.0
-docker push jjeanjacques/rinhabackend2025:graalvm-v5.0
+docker tag docker.io/jjeanjacques10/rinhabackend2025:graalvm jjeanjacques/rinhabackend2025:graalvm-v6.0
+docker push jjeanjacques/rinhabackend2025:graalvm-v6.0
 ```
 
 ---

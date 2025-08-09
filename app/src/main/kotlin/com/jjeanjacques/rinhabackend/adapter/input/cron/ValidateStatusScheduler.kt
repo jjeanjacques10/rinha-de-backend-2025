@@ -14,7 +14,7 @@ class ValidateStatusScheduler(
     @Scheduled(fixedRate = 500)
     suspend fun scheduleValidateStatus() {
         if (workerId == "1") {
-            log.info("Starting scheduled validation of payment processor status")
+            log.debug("Starting scheduled validation of payment processor status")
             validateService.validatePaymentProcessorStatus()
         }
     }
