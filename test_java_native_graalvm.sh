@@ -6,8 +6,8 @@ cd app
 ./mvnw spring-boot:build-image -Pnative -DskipTests
 cd ..
 
-docker tag docker.io/jjeanjacques10/rinhabackend2025:graalvm jjeanjacques/rinhabackend2025:graalvm-v7.0
-docker push jjeanjacques/rinhabackend2025:graalvm-v7.0
+#docker tag docker.io/jjeanjacques10/rinhabackend2025:graalvm jjeanjacques/rinhabackend2025:graalvm-v7.0
+#docker push jjeanjacques/rinhabackend2025:graalvm-v7.0
 
 docker-compose -f payment-processor/docker-compose.yml down --remove-orphans
 docker-compose -f payment-processor/docker-compose.yml up -d --build
